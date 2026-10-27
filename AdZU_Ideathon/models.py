@@ -28,6 +28,11 @@ def init_db(db_path: str = DB_PATH) -> None:
                 urgency TEXT NOT NULL,
                 primary_diagnosis TEXT NOT NULL,
                 transit_status TEXT NOT NULL,
+                corridor_type TEXT DEFAULT 'maritime',
+                allergies TEXT DEFAULT '',
+                phone_number TEXT DEFAULT '',
+                patient_lat REAL DEFAULT 0.0,
+                patient_lon REAL DEFAULT 0.0,
                 fhir_resource TEXT NOT NULL,
                 updated_at REAL NOT NULL,
                 created_at REAL NOT NULL
@@ -44,8 +49,52 @@ def init_db(db_path: str = DB_PATH) -> None:
                 payload TEXT NOT NULL
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS branches (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                type TEXT NOT NULL,
+                island_province TEXT NOT NULL,
+                lat REAL NOT NULL,
+                lon REAL NOT NULL,
+                capacity_status TEXT DEFAULT 'normal',
+                available_beds INTEGER DEFAULT 12,
+                surgical_capable INTEGER DEFAULT 0,
+                icu_capable INTEGER DEFAULT 0,
+                blood_bank INTEGER DEFAULT 0
+            )
+        """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_referral_updated ON referrals(updated_at)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_sync_timestamp ON sync_log(timestamp)")
+
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(referrals)")
+        cols = [c[1] for c in cursor.fetchall()]
+        for col_name, col_type in [
+            ("corridor_type", "TEXT DEFAULT 'maritime'"),
+            ("allergies", "TEXT DEFAULT ''"),
+            ("phone_number", "TEXT DEFAULT ''"),
+            ("patient_lat", "REAL DEFAULT 0.0"),
+            ("patient_lon", "REAL DEFAULT 0.0"),
+        ]:
+            if col_name not in cols:
+                conn.execute(f"ALTER TABLE referrals ADD COLUMN {col_name} {col_type}")
+
+        cursor.execute("SELECT COUNT(*) FROM branches")
+        if cursor.fetchone()[0] == 0:
+            branch_seeds = [
+                ("zcmc_apex", "Zamboanga City Medical Center (ZCMC)", "tertiary_apex", "Zamboanga City", 6.9125, 122.0722, "normal", 45, 1, 1, 1),
+                ("basilan_gen", "Basilan General Hospital", "provincial", "Basilan", 6.7042, 121.9714, "normal", 14, 1, 1, 1),
+                ("lamitan_dist", "Lamitan District Hospital", "district", "Basilan", 6.6492, 122.1331, "overcapacity", 0, 1, 0, 0),
+                ("sulu_prov", "Sulu Provincial Hospital", "provincial", "Sulu", 6.0536, 121.0028, "normal", 18, 1, 1, 1),
+                ("luuk_dist", "Luuk District Hospital", "district", "Sulu", 5.9619, 121.3208, "normal", 6, 0, 0, 0),
+                ("tawi_ipho", "Tawi-Tawi IPHO Bongao", "provincial", "Tawi-Tawi", 5.0289, 119.7731, "normal", 20, 1, 1, 1),
+                ("vitali_rhu", "Vitali Rural Health Unit", "rhu", "Zamboanga City", 7.3325, 122.2891, "normal", 4, 0, 0, 0)
+            ]
+            conn.executemany("""
+                INSERT INTO branches (id, name, type, island_province, lat, lon, capacity_status, available_beds, surgical_capable, icu_capable, blood_bank)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, branch_seeds)
     conn.close()
 
 def build_fhir_service_request(
@@ -176,3 +225,22 @@ def pull_deltas(since_timestamp: float, db_path: str = DB_PATH) -> List[Dict[str
         d["payload"] = json.loads(d["payload"])
         deltas.append(d)
     return deltas
+
+
+def get_all_branches(db_path: str = DB_PATH) -> List[Dict[str, Any]]:
+    conn = get_connection(db_path)
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM branches")
+    rows = cur.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def update_branch_capacity(branch_id: str, capacity_status: str, available_beds: int, db_path: str = DB_PATH):
+    conn = get_connection(db_path)
+    with conn:
+        conn.execute("""
+            UPDATE branches
+            SET capacity_status = ?, available_beds = ?
+            WHERE id = ?
+        """, (capacity_status, available_beds, branch_id))
+    conn.close()

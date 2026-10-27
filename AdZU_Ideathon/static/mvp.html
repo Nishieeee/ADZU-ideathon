@@ -1,0 +1,975 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZCMC Unified Health Exchange MVP - Interactive Map Geofence & Gmail Alerts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS & JS for OpenStreetMap Interactive Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        zcmc: {
+                            forest: '#004225',
+                            emerald: '#0B6623',
+                            gold: '#D4AF37',
+                            sand: '#F7F4EB',
+                            surface: '#FFFFFF',
+                            border: '#E2E8F0',
+                            textMain: '#1A2E26',
+                            textMuted: '#5C7168'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Source Sans 3"', 'sans-serif'],
+                        heading: ['Montserrat', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .leaflet-container {
+            font-family: 'Source Sans 3', sans-serif;
+            border-radius: 0.75rem;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-zcmc-sand text-zcmc-textMain font-sans min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-zcmc-forest text-white border-b-2 border-zcmc-gold px-4 py-3 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-zcmc-gold flex items-center justify-center font-heading font-black text-zcmc-forest text-xl shadow-inner">
+                    Z
+                </div>
+                <div>
+                    <h1 class="font-heading font-extrabold text-sm sm:text-base tracking-wide text-white flex items-center gap-2">
+                        ZCMC Regional Health Exchange <span class="text-[10px] bg-zcmc-gold text-zcmc-forest font-bold px-1.5 py-0.5 rounded">GEOFENCE MVP</span>
+                    </h1>
+                    <p class="text-[11px] text-emerald-200">Interactive Map Geofencing &bull; Gmail Alerts (axrcopu@gmail.com) &bull; Multi-Branch Shared Data</p>
+                </div>
+            </div>
+
+            <!-- Role / View Switcher -->
+            <div class="flex items-center gap-1.5 bg-black/30 p-1 rounded-xl border border-white/10 text-xs font-semibold">
+                <button id="tabBtnPatient" onclick="switchView('patient')" class="px-3 py-1.5 rounded-lg bg-zcmc-gold text-zcmc-forest font-bold shadow-xs transition">
+                    1. Patient Intake & Active Ticket
+                </button>
+                <button id="tabBtnAdmin" onclick="switchView('admin')" class="px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition">
+                    2. Branch Admin Dashboard
+                </button>
+                <button id="tabBtnEmail" onclick="switchView('email')" class="px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition flex items-center gap-1">
+                    <span>3. Gmail Notification Log</span>
+                    <span id="emailBadge" class="bg-rose-500 text-white text-[10px] px-1.5 rounded-full font-bold">0</span>
+                </button>
+                <button onclick="openBranchWindow()" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-bold transition flex items-center gap-1.5 shadow-xs">
+                    <span>🏥 Launch Branch Window</span>
+                    <svg class="w-3.5 h-3.5 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 flex-grow w-full">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: PATIENT INTAKE & TICKET -->
+        <!-- ========================================== -->
+        <section id="viewPatient" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left: Intake Form -->
+            <div class="lg:col-span-5 bg-white border border-zcmc-border rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <h2 class="font-heading font-bold text-sm uppercase tracking-wide text-zcmc-forest">Patient Pre-Admission Queue</h2>
+                        </div>
+                        <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            HL7 FHIR R4
+                        </span>
+                    </div>
+
+                    <form id="patientQueueForm" onsubmit="handlePatientQueue(event)" class="space-y-3.5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name *</label>
+                                <input type="text" id="pName" required value="Fatima S. Alih" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">PhilHealth PIN</label>
+                                <input type="text" id="pPhilhealth" value="12-345678901-2" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Notification Email *</label>
+                                <input type="email" id="pEmail" required value="axrcopu@gmail.com" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Origin Location *</label>
+                                <select id="pOriginSelect" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                                    <option value="Basilan Island" data-lat="6.7042" data-lon="121.9714">Basilan Island (Isabela / Lamitan)</option>
+                                    <option value="Sulu Province" data-lat="6.0536" data-lon="121.0028">Sulu Archipelago (Jolo)</option>
+                                    <option value="Tawi-Tawi" data-lat="5.0289" data-lon="119.7731">Tawi-Tawi (Bongao)</option>
+                                    <option value="Vitali Mountain" data-lat="7.3325" data-lon="122.2891">Vitali Highlands (Mountain Corridor)</option>
+                                    <option value="Zamboanga Urban" data-lat="6.9214" data-lon="122.0790">Zamboanga City Proper</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Chief Complaint *</label>
+                            <input type="text" id="pComplaint" required value="Acute severe lower right abdominal pain with peritonitis, suspected appendicitis" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Self-Reported Allergies (AI Risk Check)</label>
+                            <input type="text" id="pAllergies" value="Severe Penicillin and Amoxicillin anaphylaxis" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-zcmc-forest hover:bg-zcmc-emerald text-white font-heading font-bold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2">
+                            <span>ISSUE QUEUE TICKET & EVALUATE ROUTING</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right: Interactive Patient Ticket & AI Telemetry -->
+            <div class="lg:col-span-7 space-y-4">
+                <!-- Active Clickable Ticket Banner -->
+                <div id="activeTicketWrapper">
+                    <div id="ticketBanner" class="bg-gradient-to-r from-zcmc-forest to-emerald-900 text-white rounded-2xl p-5 shadow-lg border-2 border-zcmc-gold/60 transition">
+                        <div class="flex items-center justify-between pb-3 border-b border-white/20">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-3 h-3 rounded-full bg-zcmc-gold animate-ping"></span>
+                                <span class="font-heading font-bold text-xs uppercase tracking-wider text-zcmc-gold">Interactive Patient Referral Ticket</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="openMapModal()" class="text-[11px] font-semibold bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded text-white flex items-center gap-1 transition">
+                                    <span>📍 Open Map Simulator</span>
+                                </button>
+                                <button onclick="openCompleteModal(event)" class="text-[11px] font-extrabold bg-zcmc-gold hover:bg-amber-400 text-zcmc-forest px-3 py-1 rounded-lg shadow transition flex items-center gap-1">
+                                    <span>✓ Mark As Done</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div onclick="openMapModal()" class="cursor-pointer mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                            <div>
+                                <span class="text-white/60 block text-[10px] uppercase">Ticket Ref ID</span>
+                                <span id="ticketIdDisplay" class="font-mono font-bold text-sm text-zcmc-gold">ZCMC-MVP-1001</span>
+                            </div>
+                            <div>
+                                <span class="text-white/60 block text-[10px] uppercase">Patient Name</span>
+                                <span id="ticketNameDisplay" class="font-bold text-sm text-white">Fatima S. Alih</span>
+                            </div>
+                            <div>
+                                <span class="text-white/60 block text-[10px] uppercase">Assigned Facility</span>
+                                <span id="ticketDestDisplay" class="font-bold text-amber-200">Unassigned (Awaiting Admission)</span>
+                            </div>
+                            <div>
+                                <span class="text-white/60 block text-[10px] uppercase">Transit Status</span>
+                                <span id="ticketStatusDisplay" class="font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5">
+                                    Pending Departure
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-white/80">
+                            <span>Pre-defined Location Point: <strong id="ticketTargetDisplay" class="text-white">Port Pier 1 Slipway (Zamboanga)</strong></span>
+                            <span onclick="openMapModal()" class="text-emerald-300 font-semibold underline cursor-pointer">Click to Test 100m Geofence &rarr;</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ticket Completed Notice (Hidden until finished) -->
+                <div id="ticketCompletedNotice" class="hidden bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-5 text-emerald-950 shadow-xs flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-lg">
+                            ✓
+                        </div>
+                        <div>
+                            <h4 class="font-heading font-bold text-sm text-emerald-900">Active Ticket Completed & Admitted</h4>
+                            <p class="text-xs text-emerald-700" id="completedNoticeDetail">Patient has been received at the selected operating branch. Ticket removed from active intake queue.</p>
+                        </div>
+                    </div>
+                    <button onclick="createNewTicket()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition shadow-xs">
+                        + Queue New Patient
+                    </button>
+                </div>
+
+                <!-- AI Routing Telemetry Card -->
+                <div id="aiTelemetryCard" class="bg-white border border-zcmc-border rounded-2xl p-5 shadow-xs">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                        <h3 class="font-heading font-bold text-sm uppercase tracking-wide text-zcmc-forest flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-zcmc-gold"></span>
+                            AI Clinical Routing Telemetry
+                        </h3>
+                        <span id="aiAcuityBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">
+                            Acuity: STAT
+                        </span>
+                    </div>
+
+                    <!-- Allergy Warning Box -->
+                    <div id="aiAllergyBox" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 font-semibold mb-4">
+                        CRITICAL ALLERGY ALERT (Severe Penicillin/Amoxicillin): Patient requires facility with emergency airway & ICU backup.
+                    </div>
+
+                    <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Recommended Healthcare Facilities</h4>
+                    <div id="aiRecList" class="space-y-2 text-xs">
+                        <div class="p-3 border border-slate-200 rounded-xl bg-white flex justify-between items-center">
+                            <div>
+                                <div class="font-bold text-slate-800">Zamboanga City Medical Center (ZCMC)</div>
+                                <div class="text-[11px] text-slate-500">Zamboanga City &bull; Level 3 Tertiary Apex &bull; Surgical & ICU Ready &bull; Beds: 45</div>
+                            </div>
+                            <span class="text-[10px] font-bold px-2 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                CAN ACCOMMODATE
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Gmail Notification Preview -->
+                <div class="bg-slate-900 text-white border border-slate-800 rounded-2xl p-4 shadow-md">
+                    <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+                        <span class="font-bold uppercase tracking-wider text-zcmc-gold flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-rose-400" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                            Latest Gmail Dispatched (axrcopu@gmail.com)
+                        </span>
+                        <span id="lblEmailTime" class="text-[10px] text-slate-400">Ready</span>
+                    </div>
+                    <div id="emailPreviewBox" class="bg-slate-800 p-3 rounded-xl font-mono text-xs text-emerald-300 border border-slate-700 min-h-[50px]">
+                        [No email triggered yet. Open map and select a location point near or away from target.]
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: BRANCH ADMIN DASHBOARD -->
+        <!-- ========================================== -->
+        <section id="viewAdmin" class="hidden space-y-5">
+            <div class="bg-white border border-zcmc-border rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-zcmc-forest text-zcmc-gold flex items-center justify-center font-bold text-sm">
+                        HQ
+                    </div>
+                    <div>
+                        <h2 class="font-heading font-bold text-sm text-zcmc-forest">Active Workstation Branch Identity</h2>
+                        <p class="text-xs text-slate-500">Notice the distance column in the queue updates dynamically based on the selected operating branch</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-bold text-slate-700">Operating Branch:</label>
+                    <select id="adminBranchSelect" onchange="refreshBranchView()" class="text-xs font-semibold border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-white border border-zcmc-border rounded-2xl p-5 shadow-xs">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                    <div>
+                        <h3 class="font-heading font-bold text-sm uppercase tracking-wide text-zcmc-forest">
+                            Shared Inter-Branch Patient Queue
+                        </h3>
+                        <p class="text-xs text-slate-500">Shared records synchronized across regional branches and ZCMC Apex</p>
+                    </div>
+                    <button onclick="refreshBranchView()" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition">
+                        Refresh Queue
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                                <th class="p-3 font-bold">Referral ID</th>
+                                <th class="p-3 font-bold">Patient Name</th>
+                                <th class="p-3 font-bold">Origin</th>
+                                <th class="p-3 font-bold">Diagnosis</th>
+                                <th class="p-3 font-bold">Transit Status</th>
+                                <th class="p-3 font-bold text-emerald-800">Distance From THIS Branch</th>
+                                <th class="p-3 font-bold">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="branchTableBody" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: GMAIL NOTIFICATION LOG -->
+        <!-- ========================================== -->
+        <section id="viewEmail" class="hidden space-y-4">
+            <!-- Live Gmail SMTP Sender Configuration Card -->
+            <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-md border border-slate-700">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-700 mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+                        <h3 class="font-heading font-bold text-sm text-zcmc-gold uppercase">Connect Real Gmail Sender (Optional - For Real Inbox Delivery)</h3>
+                    </div>
+                    <span class="text-[10px] bg-emerald-900/60 text-emerald-300 font-mono px-2 py-0.5 rounded border border-emerald-600">
+                        TLS Port 587 Ready
+                    </span>
+                </div>
+                <p class="text-xs text-slate-300 mb-3">
+                    To receive real emails in <strong class="text-white">axrcopu@gmail.com</strong>, enter a sender Gmail account with a standard Google <strong>16-character App Password</strong> (from Google Account &rarr; Security &rarr; 2-Step Verification &rarr; App Passwords):
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">Sender Gmail Address</label>
+                        <input type="email" id="smtpSenderEmail" placeholder="e.g., youraccount@gmail.com" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none focus:border-zcmc-gold">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">16-Char Google App Password</label>
+                        <input type="password" id="smtpSenderPassword" placeholder="e.g., abcd efgh ijkl mnop" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none focus:border-zcmc-gold">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="saveAndTestSmtp()" class="w-full py-2 bg-zcmc-gold hover:bg-amber-400 text-zcmc-forest font-heading font-bold rounded-lg shadow transition">
+                            Save & Send Live Verification
+                        </button>
+                    </div>
+                </div>
+                <div id="smtpFeedbackMsg" class="mt-2 text-xs font-semibold text-emerald-300 hidden"></div>
+            </div>
+
+            <div class="bg-white border border-zcmc-border rounded-2xl p-5 shadow-xs">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                    <div>
+                        <h3 class="font-heading font-bold text-sm uppercase tracking-wide text-zcmc-forest flex items-center gap-2">
+                            <span>Gmail Notification Audit Feed</span>
+                            <span class="text-xs text-emerald-700 font-semibold">(Receiving: axrcopu@gmail.com)</span>
+                        </h3>
+                        <p class="text-xs text-slate-500">Log of automated geofence transition alerts sent via email</p>
+                    </div>
+                    <button onclick="fetchEmailLogs()" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition">
+                        Refresh Email Log
+                    </button>
+                </div>
+
+                <div id="emailLogContainer" class="space-y-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- INTERACTIVE MAP MODAL (LEAFLET / OSM) -->
+    <!-- ========================================== -->
+    <div id="mapModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl max-w-4xl w-full p-5 shadow-2xl flex flex-col space-y-4 max-h-[92vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div>
+                    <h3 class="font-heading font-bold text-base text-zcmc-forest flex items-center gap-2">
+                        <span>🗺️ Interactive Map Geofence Simulator</span>
+                        <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">100m Geofence Active</span>
+                    </h3>
+                    <p class="text-xs text-slate-500">Click anywhere on the map to set the patient's device location and evaluate autonomous status updates</p>
+                </div>
+                <button onclick="closeMapModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold">
+                    &times;
+                </button>
+            </div>
+
+            <!-- Target Waypoint Selector & Quick Jumps -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Pre-defined Location Point:</label>
+                    <select id="mapWaypointSelect" onchange="handleWaypointChange()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold outline-none">
+                        <option value="port_pier1" data-lat="6.9035" data-lon="122.0782" selected>Port Pier 1 Slipway (Zamboanga)</option>
+                        <option value="zcmc_er" data-lat="6.9125" data-lon="122.0722">ZCMC ER Trauma Gate</option>
+                        <option value="isabela_port" data-lat="6.7058" data-lon="121.9725">Isabela Port Terminal (Basilan)</option>
+                        <option value="jolo_port" data-lat="6.0585" data-lon="121.0012">Jolo Port Slipway (Sulu)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Quick Distance Preset:</label>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button onclick="jumpToPreset(50)" class="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-xs text-[11px]">
+                            Inside 100m (~50m)
+                        </button>
+                        <button onclick="jumpToPreset(400)" class="py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow-xs text-[11px]">
+                            Approach (~400m)
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Far Preset / Abort:</label>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button onclick="jumpToPreset(1500)" class="py-1.5 px-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow-xs text-[11px]">
+                            In Transit (1.5km)
+                        </button>
+                        <button onclick="jumpToPreset(8000)" class="py-1.5 px-2 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded shadow-xs text-[11px]">
+                            Far Away (8km)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaflet Interactive Map Container -->
+            <div id="mapContainer" class="w-full h-[360px] border border-slate-300 shadow-inner relative">
+                <!-- Map loads here -->
+            </div>
+
+            <!-- Telemetry & Feedback Footer -->
+            <div class="bg-slate-900 text-white p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div>
+                    <div>Distance to Point: <strong id="mapDistMeters" class="text-zcmc-gold font-mono text-sm">-- meters</strong></div>
+                    <div class="text-[11px] text-slate-300">Status Trigger: <strong id="mapStatusTrigger" class="text-emerald-400">Awaiting location click</strong></div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[11px] text-slate-400">Recipient: <span class="text-white font-semibold">axrcopu@gmail.com</span></div>
+                    <span id="mapEmailDeliveryStatus" class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+                        Email trigger ready
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentReferralId = "ZCMC-MVP-" + Math.floor(1000 + Math.random() * 9000);
+        let branchesList = [];
+        let currentPatientName = "Fatima S. Alih";
+        let targetWaypoint = { name: "Port Pier 1 Slipway (Zamboanga)", lat: 6.9035, lon: 122.0782 };
+        let clickedGps = { lat: 6.9038, lon: 122.0785 };
+
+        // Map variables
+        let map = null;
+        let waypointMarker = null;
+        let waypointCircle = null;
+        let patientMarker = null;
+        let connectingLine = null;
+
+        function switchView(view) {
+            document.getElementById('viewPatient').classList.toggle('hidden', view !== 'patient');
+            document.getElementById('viewAdmin').classList.toggle('hidden', view !== 'admin');
+            document.getElementById('viewEmail').classList.toggle('hidden', view !== 'email');
+
+            document.getElementById('tabBtnPatient').className = view === 'patient' 
+                ? 'px-3 py-1.5 rounded-lg bg-zcmc-gold text-zcmc-forest font-bold shadow-xs transition'
+                : 'px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition';
+
+            document.getElementById('tabBtnAdmin').className = view === 'admin' 
+                ? 'px-3 py-1.5 rounded-lg bg-zcmc-gold text-zcmc-forest font-bold shadow-xs transition'
+                : 'px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition';
+
+            document.getElementById('tabBtnEmail').className = view === 'email' 
+                ? 'px-3 py-1.5 rounded-lg bg-zcmc-gold text-zcmc-forest font-bold shadow-xs transition flex items-center gap-1'
+                : 'px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition flex items-center gap-1';
+
+            if (view === 'admin') refreshBranchView();
+            if (view === 'email') fetchEmailLogs();
+        }
+
+        async function initBranches() {
+            try {
+                const res = await fetch('/api/branches');
+                branchesList = await res.json();
+                const sel = document.getElementById('adminBranchSelect');
+                sel.innerHTML = branchesList.map(b => `<option value="${b.id}">${b.name} (${b.island_province})</option>`).join('');
+            } catch (e) {
+                console.error("Could not load branches", e);
+            }
+        }
+
+        async function handlePatientQueue(e) {
+            e.preventDefault();
+            currentPatientName = document.getElementById('pName').value;
+            const pPhilhealth = document.getElementById('pPhilhealth').value;
+            const pEmail = document.getElementById('pEmail').value;
+            const pOrigin = document.getElementById('pOriginSelect').value;
+            const pComplaint = document.getElementById('pComplaint').value;
+            const pAllergies = document.getElementById('pAllergies').value;
+
+            // 1. Post to AI Triage Suggestion API
+            try {
+                const aiRes = await fetch('/api/triage/suggest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        patient_name: currentPatientName,
+                        chief_complaint: pComplaint,
+                        allergies: pAllergies,
+                        patient_lat: targetWaypoint.lat,
+                        patient_lon: targetWaypoint.lon
+                    })
+                });
+                const aiData = await aiRes.json();
+                renderAiTelemetry(aiData);
+
+                // 2. Persist to HL7 FHIR Referrals Gateway
+                await fetch('/api/referrals', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: currentReferralId,
+                        patient_name: currentPatientName,
+                        philhealth_id: pPhilhealth,
+                        origin_facility: pOrigin,
+                        destination_facility: "Unassigned (Awaiting Admission)",
+                        urgency: aiData.ai_telemetry.acuity.toLowerCase(),
+                        primary_diagnosis: pComplaint,
+                        transit_status: "pending_departure",
+                        corridor_type: "maritime",
+                        allergies: pAllergies,
+                        phone_number: pEmail,
+                        patient_lat: targetWaypoint.lat,
+                        patient_lon: targetWaypoint.lon,
+                        clinical_notes: `Allergy Warnings: ${aiData.ai_telemetry.allergy_warning}`
+                    })
+                });
+
+                // Update Ticket Display
+                document.getElementById('ticketIdDisplay').innerText = currentReferralId;
+                document.getElementById('ticketNameDisplay').innerText = currentPatientName;
+                document.getElementById('ticketStatusDisplay').innerText = "Pending Departure";
+            document.getElementById('ticketDestDisplay').innerText = "Unassigned (Awaiting Admission)";
+                document.getElementById('ticketDestDisplay').innerText = "Unassigned (Awaiting Admission)";
+                document.getElementById('ticketStatusDisplay').className = "font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5";
+
+                fetchEmailLogs();
+                openMapModal();
+            } catch (err) {
+                alert("Error connecting to exchange gateway: " + err);
+            }
+        }
+
+        function renderAiTelemetry(data) {
+            const badge = document.getElementById('aiAcuityBadge');
+            badge.innerText = `Acuity: ${data.ai_telemetry.acuity}`;
+
+            const allergyBox = document.getElementById('aiAllergyBox');
+            allergyBox.innerText = data.ai_telemetry.allergy_warning;
+
+            const list = document.getElementById('aiRecList');
+            list.innerHTML = data.recommended_facilities.slice(0, 4).map(f => `
+                <div class="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1.5 shadow-2xs hover:border-zcmc-emerald transition">
+                    <div class="flex justify-between items-start gap-2">
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">${f.name}</div>
+                            <div class="text-[11px] text-slate-500">${f.island_province} &bull; ${f.distance_km} km (${f.distance_nm} NM) &bull; Beds: <strong>${f.available_beds}</strong></div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${f.is_overcapacity ? 'bg-rose-100 text-rose-800 border-rose-300' : (f.can_handle ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-300')}">
+                            ${f.status_tag}
+                        </span>
+                    </div>
+                    <!-- Detailed Clinical Rationale -->
+                    <div class="bg-slate-50 border border-slate-200 p-2 rounded-lg text-[11px] text-slate-700">
+                        <span class="font-bold text-zcmc-forest uppercase text-[10px] block mb-0.5">Why Recommended:</span>
+                        ${f.clinical_rationale || 'Matches general regional health profile.'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // MAP MODAL & GEOFENCING LOGIC
+        // ==========================================
+        function openMapModal() {
+            document.getElementById('mapModal').classList.remove('hidden');
+            setTimeout(() => {
+                if (!map) {
+                    initLeafletMap();
+                } else {
+                    map.invalidateSize();
+                }
+            }, 100);
+        }
+
+        function closeMapModal() {
+            document.getElementById('mapModal').classList.add('hidden');
+        }
+
+        function initLeafletMap() {
+            // Center around Port Pier 1 / Zamboanga
+            map = L.map('mapContainer').setView([targetWaypoint.lat, targetWaypoint.lon], 15);
+
+            // OpenStreetMap Tile Layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Pre-defined Waypoint Marker & 100m Geofence Circle
+            waypointMarker = L.marker([targetWaypoint.lat, targetWaypoint.lon], {
+                title: targetWaypoint.name
+            }).addTo(map);
+            waypointMarker.bindPopup(`<b>Pre-defined Point:</b><br>${targetWaypoint.name}`).openPopup();
+
+            waypointCircle = L.circle([targetWaypoint.lat, targetWaypoint.lon], {
+                color: '#004225',
+                fillColor: '#0B6623',
+                fillOpacity: 0.25,
+                radius: 100 // Exact 100 meter geofence
+            }).addTo(map);
+
+            // Patient Click Marker
+            patientMarker = L.marker([clickedGps.lat, clickedGps.lon], {
+                draggable: true
+            }).addTo(map);
+            patientMarker.bindPopup("<b>Patient Device GPS</b><br>Click map to relocate").openPopup();
+
+            patientMarker.on('dragend', function (e) {
+                const coord = e.target.getLatLng();
+                processMapLocation(coord.lat, coord.lng);
+            });
+
+            // Map Click Event
+            map.on('click', function(e) {
+                processMapLocation(e.latlng.lat, e.latlng.lng);
+            });
+
+            // Initial evaluation
+            processMapLocation(clickedGps.lat, clickedGps.lon);
+        }
+
+        function handleWaypointChange() {
+            const sel = document.getElementById('mapWaypointSelect');
+            const opt = sel.options[sel.selectedIndex];
+            targetWaypoint.name = opt.text;
+            targetWaypoint.lat = parseFloat(opt.getAttribute('data-lat'));
+            targetWaypoint.lon = parseFloat(opt.getAttribute('data-lon'));
+
+            document.getElementById('ticketTargetDisplay').innerText = targetWaypoint.name;
+
+            if (map && waypointMarker && waypointCircle) {
+                waypointMarker.setLatLng([targetWaypoint.lat, targetWaypoint.lon]);
+                waypointMarker.bindPopup(`<b>Pre-defined Point:</b><br>${targetWaypoint.name}`).openPopup();
+                waypointCircle.setLatLng([targetWaypoint.lat, targetWaypoint.lon]);
+                map.setView([targetWaypoint.lat, targetWaypoint.lon], 15);
+                processMapLocation(clickedGps.lat, clickedGps.lon);
+            }
+        }
+
+        function jumpToPreset(approxMeters) {
+            // Offset coordinates by approx meters (1 deg lat ~ 111,000 m)
+            const offsetLat = approxMeters / 111000.0;
+            const newLat = targetWaypoint.lat + offsetLat;
+            const newLon = targetWaypoint.lon + (offsetLat * 0.5);
+            processMapLocation(newLat, newLon);
+            if (map) map.setView([newLat, newLon], 15);
+        }
+
+        async function processMapLocation(lat, lon) {
+            clickedGps.lat = lat;
+            clickedGps.lon = lon;
+
+            if (patientMarker) patientMarker.setLatLng([lat, lon]);
+
+            // Draw/update connecting line
+            if (connectingLine && map) map.removeLayer(connectingLine);
+            if (map) {
+                connectingLine = L.polyline([
+                    [targetWaypoint.lat, targetWaypoint.lon],
+                    [lat, lon]
+                ], { color: '#D4AF37', weight: 3, dashArray: '6, 6' }).addTo(map);
+            }
+
+            try {
+                const res = await fetch('/api/geofence/map-click', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        referral_id: currentReferralId,
+                        clicked_lat: lat,
+                        clicked_lon: lon,
+                        waypoint_lat: targetWaypoint.lat,
+                        waypoint_lon: targetWaypoint.lon,
+                        waypoint_name: targetWaypoint.name,
+                        recipient_email: "axrcopu@gmail.com"
+                    })
+                });
+
+                const data = await res.json();
+
+                // Update Map Modal Footer
+                document.getElementById('mapDistMeters').innerText = `${data.distance_meters} meters`;
+                document.getElementById('mapStatusTrigger').innerText = data.status_label;
+                document.getElementById('mapEmailDeliveryStatus').innerText = `Gmail Dispatched (${data.email_delivery.status})`;
+
+                // Update Main UI Ticket
+                const ticketBadge = document.getElementById('ticketStatusDisplay');
+                ticketBadge.innerText = data.status_label;
+                ticketBadge.className = data.is_within_100m 
+                    ? "font-bold text-xs bg-emerald-400 text-black px-2 py-0.5 rounded inline-block mt-0.5" 
+                    : "font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5";
+
+                // Update Email Preview Box
+                document.getElementById('emailPreviewBox').innerText = data.email_delivery.body;
+                document.getElementById('lblEmailTime').innerText = new Date().toLocaleTimeString();
+
+                fetchEmailLogs();
+            } catch (err) {
+                console.error("Geofence API error", err);
+            }
+        }
+
+        // ==========================================
+        // BRANCH ADMIN & DISTANCE LOGIC
+        // ==========================================
+        function haversineDist(lat1, lon1, lat2, lon2) {
+            const R = 6371.0;
+            const dlat = (lat2 - lat1) * Math.PI / 180;
+            const dlon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dlat / 2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dlon / 2)**2;
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return (R * c).toFixed(1);
+        }
+
+        async function refreshBranchView() {
+            const sel = document.getElementById('adminBranchSelect');
+            const branchId = sel.value;
+            const currentBranch = branchesList.find(b => b.id === branchId) || branchesList[0];
+            if (!currentBranch) return;
+
+            const res = await fetch('/api/referrals');
+            const referrals = await res.json();
+            const tbody = document.getElementById('branchTableBody');
+
+            if (!referrals.length) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">No active patient referrals found in regional database.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = referrals.map(r => {
+                const dist = haversineDist(currentBranch.lat, currentBranch.lon, r.patient_lat || clickedGps.lat, r.patient_lon || clickedGps.lon);
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-mono font-bold text-slate-700">${r.id}</td>
+                        <td class="p-3 font-semibold text-slate-800">${r.patient_name}</td>
+                        <td class="p-3 text-slate-600">${r.origin_facility}</td>
+                        <td class="p-3 text-slate-600 max-w-[200px] truncate" title="${r.primary_diagnosis}">${r.primary_diagnosis}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">
+                                ${r.transit_status}
+                            </span>
+                        </td>
+                        <td class="p-3 font-bold text-emerald-800">
+                            ${dist} km from ${currentBranch.name}
+                        </td>
+                        <td class="p-3">
+                            <button onclick="openMapModal()" class="px-2.5 py-1 bg-zcmc-forest hover:bg-zcmc-emerald text-white rounded font-semibold text-[11px]">
+                                Test Geofence
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function fetchEmailLogs() {
+            try {
+                const res = await fetch('/api/email/log');
+                const logs = await res.json();
+                document.getElementById('emailBadge').innerText = logs.length;
+                const container = document.getElementById('emailLogContainer');
+                if (!logs.length) {
+                    container.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">No Gmail notifications logged yet.</div>`;
+                    return;
+                }
+                container.innerHTML = logs.map(l => `
+                    <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50 space-y-1.5 text-xs">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-800">${l.subject}</span>
+                                <span class="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded">To: ${l.recipient}</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400">${new Date(l.timestamp * 1000).toLocaleTimeString()}</span>
+                        </div>
+                        <pre class="font-mono text-slate-700 bg-white p-2.5 rounded border border-slate-200 whitespace-pre-wrap text-[11px]">${l.body}</pre>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error("Could not fetch email logs", e);
+            }
+        }
+
+        
+        async function saveAndTestSmtp() {
+            const sender = document.getElementById('smtpSenderEmail').value;
+            const pass = document.getElementById('smtpSenderPassword').value;
+            const feedback = document.getElementById('smtpFeedbackMsg');
+
+            if (!sender || !pass) {
+                alert("Please provide both sender Gmail and 16-character App Password.");
+                return;
+            }
+
+            feedback.className = "mt-2 text-xs font-semibold text-amber-300 block";
+            feedback.innerText = "Connecting to smtp.gmail.com:587 and verifying credentials...";
+
+            try {
+                const res = await fetch('/api/email/configure', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        gmail_user: sender,
+                        gmail_app_password: pass
+                    })
+                });
+                const data = await res.json();
+                feedback.className = "mt-2 text-xs font-semibold text-emerald-300 block";
+                feedback.innerText = "Result: " + data.delivery.status;
+                fetchEmailLogs();
+            } catch (err) {
+                feedback.className = "mt-2 text-xs font-semibold text-rose-300 block";
+                feedback.innerText = "Error configuring SMTP: " + err;
+            }
+        }
+
+        
+        function openBranchWindow(branchId) {
+            const bId = branchId || document.getElementById('adminBranchSelect')?.value || 'zcmc_apex';
+            window.open(`/branch.html?id=${encodeURIComponent(bId)}`, '_blank', 'width=1150,height=750');
+        }
+
+        function openCompleteModal(event) {
+            if (event) event.stopPropagation();
+            const sel = document.getElementById('completeBranchSelect');
+            sel.innerHTML = branchesList.map(b => `
+                <option value="${b.id}" data-name="${b.name}">
+                    ${b.name} (${b.island_province}) - ${b.available_beds} beds free
+                </option>
+            `).join('');
+            document.getElementById('completeModal').classList.remove('hidden');
+        }
+
+        function closeCompleteModal() {
+            document.getElementById('completeModal').classList.add('hidden');
+        }
+
+        async function confirmCompleteTicket() {
+            const sel = document.getElementById('completeBranchSelect');
+            const branchId = sel.value;
+            const branchName = sel.options[sel.selectedIndex].getAttribute('data-name');
+
+            try {
+                const res = await fetch('/api/referrals/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        referral_id: currentReferralId,
+                        admitting_branch_id: branchId,
+                        admitting_branch_name: branchName
+                    })
+                });
+
+                const data = await res.json();
+                closeCompleteModal();
+
+                // 1. Hide active ticket wrapper
+                document.getElementById('activeTicketWrapper').classList.add('hidden');
+
+                // 2. Show completed notice
+                const notice = document.getElementById('ticketCompletedNotice');
+                notice.classList.remove('hidden');
+                document.getElementById('completedNoticeDetail').innerText =
+                    `Ticket ${currentReferralId} (${currentPatientName}) has been finalized and admitted to ${branchName}. Record is now synchronized across all operating branch terminals.`;
+
+                // 3. Close AI Clinical Routing Telemetry — replace content with closure banner
+                const aiCard = document.getElementById('aiTelemetryCard');
+                if (aiCard) {
+                    aiCard.innerHTML = `
+                        <div class="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-300 rounded-xl">
+                            <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-base flex-shrink-0">✓</div>
+                            <div>
+                                <div class="font-heading font-bold text-sm text-emerald-900">AI Routing Telemetry — CLOSED</div>
+                                <div class="text-xs text-emerald-700 mt-0.5">Patient admitted to <strong>${branchName}</strong>. Geofence tracking and clinical routing for this ticket are now inactive.</div>
+                            </div>
+                        </div>`;
+                }
+
+                // 4. Close Gmail preview panel — replace with closure notice
+                const emailPreview = document.getElementById('emailPreviewBox');
+                const emailTimeLabel = document.getElementById('lblEmailTime');
+                if (emailPreview) {
+                    emailPreview.innerText = `[TICKET CLOSED] Final closure notification dispatched to axrcopu@gmail.com for ${currentPatientName} admitted to ${branchName}. No further automated notifications will be sent.`;
+                    emailPreview.className = 'bg-emerald-900 p-3 rounded-xl font-mono text-xs text-emerald-200 border border-emerald-700 min-h-[50px]';
+                }
+                if (emailTimeLabel) emailTimeLabel.innerText = new Date().toLocaleTimeString();
+
+                // 5. Refresh admin branch tables and email log
+                refreshBranchView();
+                setTimeout(fetchEmailLogs, 2500);
+
+            } catch (e) {
+                alert("Error completing ticket: " + e);
+            }
+        }
+
+        function createNewTicket() {
+            currentReferralId = "ZCMC-MVP-" + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('ticketIdDisplay').innerText = currentReferralId;
+            document.getElementById('ticketCompletedNotice').classList.add('hidden');
+            document.getElementById('activeTicketWrapper').classList.remove('hidden');
+            document.getElementById('ticketStatusDisplay').innerText = "Pending Departure";
+            document.getElementById('ticketDestDisplay').innerText = "Unassigned (Awaiting Admission)";
+                document.getElementById('ticketDestDisplay').innerText = "Unassigned (Awaiting Admission)";
+            document.getElementById('ticketStatusDisplay').className = "font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5";
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initBranches();
+            fetchEmailLogs();
+        });
+    </script>
+
+    <!-- ========================================== -->
+    <!-- MARK AS DONE / ADMIT TO BRANCH MODAL -->
+    <!-- ========================================== -->
+    <div id="completeModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl flex flex-col space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    <h3 class="font-heading font-bold text-base text-zcmc-forest">Complete Ticket & Admit Patient</h3>
+                </div>
+                <button onclick="closeCompleteModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold">
+                    &times;
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-600">
+                Select which operating branch facility is admitting and receiving this patient. The ticket will update to <strong class="text-emerald-800">COMPLETED & ADMITTED</strong>, appear in that branch's admitted records, and close from this intake section (no emails sent).
+            </p>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Admitting Operating Branch Facility:</label>
+                <select id="completeBranchSelect" class="w-full text-xs font-semibold border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button onclick="closeCompleteModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-lg">
+                    Cancel
+                </button>
+                <button onclick="confirmCompleteTicket()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-heading font-bold text-xs rounded-xl shadow transition">
+                    Confirm Admission & Complete Ticket
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
