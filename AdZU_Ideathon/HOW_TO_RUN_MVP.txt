@@ -1,0 +1,73 @@
+================================================================================
+ZCMC REGIONAL HEALTH EXCHANGE (ZAMBASULTA) - MVP RUN GUIDE
+================================================================================
+Target Project Directory:
+C:\Users\Axxer\Documents\AdZU_Ideathon\ADZU-ideathon\AdZU_Ideathon
+
+--------------------------------------------------------------------------------
+1. PREREQUISITES
+--------------------------------------------------------------------------------
+- Python 3.10+ installed
+- Required packages (FastAPI, Uvicorn, Pydantic):
+    pip install fastapi uvicorn pydantic
+
+--------------------------------------------------------------------------------
+2. HOW TO START THE SERVER
+--------------------------------------------------------------------------------
+Step 1: Open PowerShell or Command Prompt.
+Step 2: Navigate to the application folder:
+    cd "C:\Users\Axxer\Documents\AdZU_Ideathon\ADZU-ideathon\AdZU_Ideathon"
+
+Step 3: Run the local dev server:
+    python -m uvicorn main:app --reload --port 8000
+
+(Note: If you want to access the app from your mobile phone over local Wi-Fi, run:)
+    python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+--------------------------------------------------------------------------------
+3. WEB APPLICATIONS & INTERFACES (OPEN IN BROWSER)
+--------------------------------------------------------------------------------
+1. Unified Live MVP (Recommended for Demo):
+   http://localhost:8000/mvp.html
+   - Tab 1 (Patient Intake & Triage): Input symptoms, AI capability matching.
+   - Interactive Map Simulator: Test 100m geofencing, GPS transit states.
+   - Tab 2 (Branch Admin Queue): View live admissions & cross-branch distance.
+   - Tab 3 (SMS Dispatch Ledger): View 2G cellular SMS broadcasts.
+
+2. Clinic Referral Triage & Offline Vault:
+   http://localhost:8000/index.html
+   - Test "Island Outage" toggle (AES-256 Web Crypto Store-and-Forward).
+
+3. Multi-Branch Operating Terminal:
+   http://localhost:8000/branch.html?id=zcmc_apex
+   - Change ?id= to basilan_gen, sulu_prov, or vitali_rhu to view branch perspectives.
+
+4. Maritime Sea Corridor Radar:
+   http://localhost:8000/dock.html
+   - Live vessel tracking across Basilan Strait, Sulu, and Tawi-Tawi corridors.
+
+--------------------------------------------------------------------------------
+4. HOW TO TEST OFFLINE-FIRST MODE (GIDA RESILIENCE)
+--------------------------------------------------------------------------------
+1. In http://localhost:8000/index.html, click the red "Island Outage" button in the top bar.
+2. Submit a high-acuity patient referral (e.g., Severe Trauma).
+3. Observe:
+   - Form does not fail or hang.
+   - Ticket is badged as "AES-256 VAULT".
+   - "Device Vault" KPI counter increments.
+4. Click "Online" / "Reconnect":
+   - The queue auto-flushes to the backend FHIR R4 repository.
+   - Badge converts to "FHIR R4 HUB".
+
+--------------------------------------------------------------------------------
+5. HOW TO RUN AUTOMATED TEST SUITE
+--------------------------------------------------------------------------------
+Run regression and HL7 FHIR conformance tests:
+    cd "C:\Users\Axxer\Documents\AdZU_Ideathon\ADZU-ideathon"
+    python -m unittest discover -s AdZU_Ideathon -p "test_suite.py"
+
+--------------------------------------------------------------------------------
+6. STOPPING THE SERVER
+--------------------------------------------------------------------------------
+Press CTRL+C in the terminal running uvicorn to shut down port 8000 cleanly.
+================================================================================

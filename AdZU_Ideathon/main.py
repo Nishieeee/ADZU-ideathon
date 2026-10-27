@@ -29,8 +29,40 @@ app.add_middleware(
 
 models.init_db()
 
-# In-memory SMS log buffer for simulation auditing
+# Check for credentials in environment or local files
+def load_local_env():
+    for p in [
+        os.path.join(os.path.dirname(__file__), ".env"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+    ]:
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as ef:
+                for line in ef:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        os.environ[k.strip()] = v.strip().strip('"').strip("'")
+
+load_local_env()
+
+# In-memory SMS log buffer for simulation auditing & offline outbox
 sms_dispatches = []
+
+def dispatch_sms_notification(recipient_phone: str, message: str, event_type: str = "triage_alert") -> Dict[str, Any]:
+    """
+    Autonomous Offline 2G GSM / SMS Dispatcher.
+    Queues compact 160-character alerts into the regional emergency dispatch ledger.
+    """
+    log_entry = {
+        "timestamp": time.time(),
+        "recipient": recipient_phone or "+63-917-ZCMC-911",
+        "sms_text": message,
+        "type": event_type,
+        "channel": "2G_GSM_SMS",
+        "status": "DISPATCHED_CELLULAR"
+    }
+    sms_dispatches.insert(0, log_entry)
+    return log_entry
 
 class ReferralCreate(BaseModel):
     id: str
@@ -163,6 +195,7 @@ class TriageSuggestRequest(BaseModel):
     patient_lat: float
     patient_lon: float
     urgency: Optional[str] = "urgent"
+    phone_number: str = ""
 
 class GeofenceUpdateRequest(BaseModel):
     referral_id: str
@@ -214,7 +247,12 @@ def create_or_update_referral(data: ReferralCreate):
         diagnosis=data.primary_diagnosis,
         transit_status=data.transit_status,
         fhir_resource=fhir_bundle,
-        client_id=data.client_id
+        client_id=data.client_id,
+        phone_number=data.phone_number,
+        allergies=data.allergies,
+        corridor_type=data.corridor_type,
+        patient_lat=data.patient_lat,
+        patient_lon=data.patient_lon,
     )
     return result
 
@@ -329,6 +367,7 @@ def complete_referral(req: ReferralCompleteRequest, background_tasks: Background
         patient_lat     = 0.0
         patient_lon     = 0.0
         last_transit    = "unknown"
+        created_at_ts   = now
         transit_minutes = 0.0
         clinical_notes  = ""
 
@@ -395,11 +434,12 @@ def complete_referral(req: ReferralCompleteRequest, background_tasks: Background
     ]
     closure_body = "\n".join(closure_lines)
 
-    background_tasks.add_task(
-        send_gmail_notification,
-        subject=closure_subject,
-        body_text=closure_body,
-        recipient=DEFAULT_GMAIL
+    closure_sms = f"[ZCMC CLOSED] Ref {req.referral_id}: Patient {patient_name} admitted at {req.admitting_branch_name}. Transit: {transit_minutes}m. Status: ADMITTED & COMPLETED."
+    closure_alert_phone = phone_number if phone_number and phone_number != "Not provided" else "+63-917-ZCMC-911"
+    dispatch_sms_notification(
+        recipient_phone=closure_alert_phone,
+        message=closure_sms,
+        event_type="ticket_closure"
     )
 
     return {
@@ -407,7 +447,7 @@ def complete_referral(req: ReferralCompleteRequest, background_tasks: Background
         "referral_id": req.referral_id,
         "admitting_branch": req.admitting_branch_name,
         "transit_status": "admitted_and_completed",
-        "closure_email": "dispatched"
+        "closure_sms": closure_sms
     }
 
 @app.get("/api/branches")
@@ -550,15 +590,6 @@ def suggest_facilities(req: TriageSuggestRequest):
     if allergy_anaphylaxis_risk:
         sms_text += f"Notice: Allergy alert flagged for {req.allergies}. Keep GPS active."
 
-    # Record SMS in simulation audit log
-    dispatch_record = {
-        "timestamp": time.time(),
-        "patient_name": req.patient_name,
-        "sms_text": sms_text,
-        "type": "triage_recommendation"
-    }
-    sms_dispatches.insert(0, dispatch_record)
-
     # Formulate Comprehensive Intake & Facility Options Email
     nearest = min(recommendations, key=lambda x: x["distance_km"]) if recommendations else None
     
@@ -595,13 +626,12 @@ def suggest_facilities(req: TriageSuggestRequest):
         
     body_lines.append("To track real-time transit and trigger automatic 100-meter GPS arrival updates, keep your browser ticket open.")
     
-    full_email_body = "\n".join(body_lines)
-    
-    # Send email to axrcopu@gmail.com
-    email_delivery_result = send_gmail_notification(
-        subject=email_subject,
-        body_text=full_email_body,
-        recipient=DEFAULT_GMAIL
+    # Autonomous SMS dispatch (cellular 2G protocol)
+    alert_phone = req.phone_number or "+63-917-ZCMC-911"
+    sms_res = dispatch_sms_notification(
+        recipient_phone=alert_phone,
+        message=sms_text,
+        event_type="triage_recommendation"
     )
 
     return {
@@ -614,7 +644,7 @@ def suggest_facilities(req: TriageSuggestRequest):
         "recommended_facilities": recommendations,
         "nearest_facility": nearest,
         "generated_sms": sms_text,
-        "email_delivery": email_delivery_result
+        "sms_delivery": sms_res
     }
 
 # --- Autonomous Geofencing State Engine ---
@@ -687,21 +717,21 @@ def evaluate_map_click(req: MapClickGeofenceRequest):
         """, (new_status, req.clicked_lat, req.clicked_lon, time.time(), req.referral_id))
     conn.close()
     
-    # Email notification body
-    subject = f"[ZCMC GeoAlert] Referral {req.referral_id} - Status: {new_status.upper()}"
-    body = (
-        f"ZCMC REGIONAL HEALTH EXCHANGE - AUTONOMOUS GEOFENCE NOTIFICATION\n\n"
-        f"Referral ID: {req.referral_id}\n"
-        f"Pre-defined Target Waypoint: {req.waypoint_name} ({req.waypoint_lat:.4f}, {req.waypoint_lon:.4f})\n"
-        f"Patient Device Selected GPS: ({req.clicked_lat:.4f}, {req.clicked_lon:.4f})\n"
-        f"Calculated Distance to Waypoint: {dist_m} meters ({dist_km} km)\n"
-        f"Geofence Detection: {'INSIDE 100M RADIUS' if dist_m <= 100 else 'OUTSIDE 100M RADIUS'}\n"
-        f"Updated Patient Transit Status: {status_label}\n"
-        f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n"
-        f"This status has been updated autonomously and synchronized across all regional clinic branches."
+    # Resolve alert phone from the stored referral record
+    _geo_conn = models.get_connection()
+    _geo_row = _geo_conn.execute(
+        "SELECT phone_number FROM referrals WHERE id = ?", (req.referral_id,)
+    ).fetchone()
+    _geo_conn.close()
+    geo_alert_phone = (_geo_row["phone_number"] if _geo_row and _geo_row["phone_number"] else "") or "+63-917-ZCMC-911"
+
+    # SMS notification body
+    status_sms = f"[ZCMC GeoAlert] Ref {req.referral_id}: Status {new_status.upper()} - {status_label} (Dist: {dist_m}m)."
+    sms_res = dispatch_sms_notification(
+        recipient_phone=geo_alert_phone,
+        message=status_sms,
+        event_type="geofence_status_change"
     )
-    
-    email_res = send_gmail_notification(subject=subject, body_text=body, recipient=req.recipient_email or DEFAULT_GMAIL)
     
     return {
         "referral_id": req.referral_id,
@@ -712,7 +742,7 @@ def evaluate_map_click(req: MapClickGeofenceRequest):
         "is_within_100m": (dist_m <= 100),
         "new_status": new_status,
         "status_label": status_label,
-        "email_delivery": email_res
+        "sms_delivery": sms_res
     }
 
 
