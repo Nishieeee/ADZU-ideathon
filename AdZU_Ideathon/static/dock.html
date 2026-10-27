@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#064E3B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>ZCMC Port Reception & Maritime Radar | Mobile App</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        zcmc: {
+                            forest: '#064E3B',
+                            emerald: '#087A55',
+                            mint: '#70B89B',
+                            ivory: '#F7F5EC',
+                            gold: '#C8A64D',
+                            antiquegold: '#9C7A2F',
+                            surface: '#FFFFFF',
+                            border: '#E2E8F0',
+                            textMain: '#0F172A',
+                            textMuted: '#64748B'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Montserrat', 'sans-serif'],
+                        body: ['Source Sans 3', 'sans-serif'],
+                        formal: ['Libre Baskerville', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            font-family: 'Source Sans 3', sans-serif; 
+            background-color: #F7F5EC; 
+            color: #0F172A;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3, h4, .font-heading { font-family: 'Montserrat', sans-serif; }
+        .font-formal { font-family: 'Libre Baskerville', serif; }
+        .touch-action:active { transform: scale(0.97); }
+        .pb-safe { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+        
+        @keyframes radar-pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.08); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .radar-beacon { animation: radar-pulse 3s infinite ease-in-out; }
+    </style>
+</head>
+<body class="min-h-screen antialiased flex flex-col bg-zcmc-ivory pb-safe">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-3 left-4 right-4 z-50 flex flex-col gap-2 max-w-md mx-auto pointer-events-none"></div>
+
+    <!-- Mobile-First Sticky App Header -->
+    <header class="bg-zcmc-forest text-white sticky top-0 z-40 border-b-2 border-zcmc-gold shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
+            
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="relative w-8 h-8 flex-shrink-0 flex items-center justify-center bg-zcmc-forest rounded-md border border-zcmc-mint/40 shadow-xs">
+                    <div class="absolute w-5 h-5 border border-zcmc-gold rounded-xs translate-x-0.5 translate-y-0.5 opacity-90"></div>
+                    <div class="relative w-5 h-5 bg-zcmc-emerald border border-zcmc-mint rounded-xs flex items-center justify-center text-white font-bold text-xs">
+                        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 10.5h-5.5V5a1.5 1.5 0 0 0-3 0v5.5H5a1.5 1.5 0 0 0 0 3h5.5V19a1.5 1.5 0 0 0 3 0v-5.5H19a1.5 1.5 0 0 0 0-3z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="text-xs sm:text-sm font-bold tracking-tight text-white font-heading truncate">
+                            PORT RADAR
+                        </h1>
+                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-zcmc-gold/20 text-zcmc-gold border border-zcmc-gold/40 uppercase">
+                            ZAMBOANGA
+                        </span>
+                    </div>
+                    <p class="text-[10px] text-zcmc-mint font-formal italic truncate">
+                        Sea Ambulance Reception &amp; Dock Handoff
+                    </p>
+                </div>
+            </div>
+
+            <button onclick="fetchDockReferrals()" class="px-3 py-1.5 bg-zcmc-emerald hover:bg-zcmc-mint text-white text-xs font-bold rounded-lg border border-white/20 transition flex items-center gap-1.5 touch-action">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                <span class="text-[11px]">Refresh</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Mobile Content -->
+    <main class="max-w-4xl mx-auto px-4 py-4 space-y-4 flex-grow w-full">
+        
+        <!-- Sea Corridors (Mobile Stacked / Horizontally Scrolled) -->
+        <div class="bg-zcmc-surface border border-zcmc-border rounded-xl p-3.5 shadow-xs space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-blue-600 radar-beacon"></div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-zcmc-forest font-heading">
+                        ZAMBASULTA Maritime Routes
+                    </h2>
+                </div>
+                <span class="text-[10px] font-mono text-slate-500">Live Channels</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex sm:flex-col justify-between items-center sm:items-start gap-1">
+                    <div>
+                        <span class="text-xs font-bold text-zcmc-forest block">Basilan Strait</span>
+                        <span class="text-[10px] text-slate-500">18-24 NM &bull; ~45-60 min</span>
+                    </div>
+                    <span id="basilanCount" class="font-bold text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">0 vessels</span>
+                </div>
+
+                <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex sm:flex-col justify-between items-center sm:items-start gap-1">
+                    <div>
+                        <span class="text-xs font-bold text-zcmc-forest block">Sulu Sea</span>
+                        <span class="text-[10px] text-slate-500">80-95 NM &bull; ~4-5 hours</span>
+                    </div>
+                    <span id="suluCount" class="font-bold text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">0 vessels</span>
+                </div>
+
+                <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex sm:flex-col justify-between items-center sm:items-start gap-1">
+                    <div>
+                        <span class="text-xs font-bold text-zcmc-forest block">Tawi-Tawi Link</span>
+                        <span class="text-[10px] text-slate-500">180-210 NM &bull; ~12-16h</span>
+                    </div>
+                    <span id="tawiCount" class="font-bold text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">0 vessels</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs">
+            <button onclick="setFilter('all')" id="filter-all" class="filter-pill px-3 py-1.5 rounded-lg font-bold bg-zcmc-forest text-white whitespace-nowrap touch-action">All Inbound</button>
+            <button onclick="setFilter('in_maritime_transit')" id="filter-in_maritime_transit" class="filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action">At Sea</button>
+            <button onclick="setFilter('arrived_port')" id="filter-arrived_port" class="filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action">Port Docked</button>
+            <button onclick="setFilter('admitted_zcmc')" id="filter-admitted_zcmc" class="filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action">Admitted ZCMC</button>
+        </div>
+
+        <!-- Vessel Queue List -->
+        <div id="dockContainer" class="space-y-3">
+            <!-- Dynamically populated -->
+        </div>
+
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-zcmc-forest text-white border-t-2 border-zcmc-gold/60 shadow-2xl flex items-center justify-around px-2 py-1.5 md:py-2">
+        <a href="/" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+            </svg>
+            <span class="text-[10px] font-semibold mt-0.5">Refer</span>
+        </a>
+
+        <a href="/" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="text-[10px] font-semibold mt-0.5">Queue</span>
+        </a>
+
+        <a href="/dock.html" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-zcmc-gold touch-action">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+            </svg>
+            <span class="text-[10px] font-bold mt-0.5">Radar</span>
+        </a>
+
+        <a href="/analytics.html" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            <span class="text-[10px] font-semibold mt-0.5">Stats</span>
+        </a>
+    </nav>
+
+    <script>
+        let allDockRecords = [];
+        let currentFilter = 'all';
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById("toastContainer");
+            const toast = document.createElement("div");
+            const bgClass = type === 'success' ? 'bg-zcmc-forest text-white border-zcmc-gold' : 'bg-rose-900 text-white border-rose-400';
+            toast.className = `${bgClass} border px-3.5 py-2.5 rounded-xl shadow-xl text-xs font-medium flex items-center justify-between gap-3 pointer-events-auto transition transform duration-200 translate-y-1 opacity-0`;
+            toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white">&times;</button>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-1', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 250);
+            }, 3500);
+        }
+
+        async function fetchDockReferrals() {
+            try {
+                const res = await fetch("/api/referrals");
+                if (res.ok) {
+                    allDockRecords = await res.json();
+                    updateCorridorCounts(allDockRecords);
+                    applyFilter();
+                }
+            } catch (err) {
+                console.error("Error loading dock referrals:", err);
+            }
+        }
+
+        function updateCorridorCounts(records) {
+            const inTransit = records.filter(r => r.transit_status === 'in_maritime_transit');
+            const basilan = inTransit.filter(r => r.origin_facility.includes("Basilan") || r.origin_facility.includes("Lamitan")).length;
+            const sulu = inTransit.filter(r => r.origin_facility.includes("Sulu") || r.origin_facility.includes("Luuk")).length;
+            const tawi = inTransit.filter(r => r.origin_facility.includes("Tawi") || r.origin_facility.includes("Mapun")).length;
+
+            document.getElementById("basilanCount").innerText = `${basilan} vessel${basilan === 1 ? '' : 's'}`;
+            document.getElementById("suluCount").innerText = `${sulu} vessel${sulu === 1 ? '' : 's'}`;
+            document.getElementById("tawiCount").innerText = `${tawi} vessel${tawi === 1 ? '' : 's'}`;
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.className = "filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action";
+            });
+            const activeBtn = document.getElementById(`filter-${filter}`);
+            if (activeBtn) {
+                activeBtn.className = "filter-pill px-3 py-1.5 rounded-lg font-bold bg-zcmc-forest text-white whitespace-nowrap touch-action";
+            }
+            applyFilter();
+        }
+
+        function applyFilter() {
+            let filtered = allDockRecords;
+            if (currentFilter !== 'all') {
+                filtered = allDockRecords.filter(r => r.transit_status === currentFilter);
+            }
+            renderDock(filtered);
+        }
+
+        async function updateStatus(id, newStatus) {
+            try {
+                const item = allDockRecords.find(r => r.id === id);
+                if (!item) return;
+
+                const payload = {
+                    id: item.id,
+                    patient_name: item.patient_name,
+                    philhealth_id: item.philhealth_id,
+                    origin_facility: item.origin_facility,
+                    destination_facility: item.destination_facility,
+                    urgency: item.urgency,
+                    primary_diagnosis: item.primary_diagnosis,
+                    transit_status: newStatus,
+                    clinical_notes: item.clinical_notes || "",
+                    client_id: "port-mobile-terminal"
+                };
+
+                const postRes = await fetch("/api/referrals", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (postRes.ok) {
+                    showToast(`Updated to ${newStatus.replace(/_/g, ' ')}.`, 'success');
+                    fetchDockReferrals();
+                }
+            } catch (err) {
+                showToast("Failed to update status: " + err, 'error');
+            }
+        }
+
+        function renderDock(records) {
+            const container = document.getElementById("dockContainer");
+            container.innerHTML = "";
+
+            if (!records || records.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 text-center bg-white border border-dashed border-slate-300 rounded-xl">
+                        <svg class="w-8 h-8 mx-auto text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                        </svg>
+                        <p class="text-xs font-bold text-slate-600">No vessels matching filter</p>
+                    </div>
+                `;
+                return;
+            }
+
+            records.forEach(r => {
+                const isStat = r.urgency === 'stat';
+                const isAsap = r.urgency === 'asap';
+                const isUrgent = r.urgency === 'urgent';
+                
+                let urgencyBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">ROUTINE</span>`;
+                if (isStat) {
+                    urgencyBadge = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-300 animate-pulse">STAT</span>`;
+                } else if (isAsap || isUrgent) {
+                    urgencyBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300">${r.urgency.toUpperCase()}</span>`;
+                }
+
+                const card = document.createElement("div");
+                card.className = "bg-white border border-zcmc-border rounded-xl p-3.5 sm:p-4 shadow-xs space-y-2.5";
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-mono font-bold text-zcmc-forest text-[11px]">${r.id}</span>
+                            ${urgencyBadge}
+                        </div>
+                        <span class="text-[11px] font-semibold text-slate-600 truncate max-w-[150px]">
+                            ${r.origin_facility}
+                        </span>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold text-zcmc-textMain font-heading">${r.patient_name}</h3>
+                        <p class="text-xs text-slate-600 mt-0.5"><strong>Dx:</strong> ${r.primary_diagnosis}</p>
+                    </div>
+
+                    <!-- Touch Actions for Port Handoff -->
+                    <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-1.5 text-xs">
+                        <button onclick="updateStatus('${r.id}', 'in_maritime_transit')" 
+                                class="flex-1 min-h-[36px] py-1 px-2 rounded-lg font-bold text-[11px] ${r.transit_status === 'in_maritime_transit' ? 'bg-blue-700 text-white shadow-xs' : 'bg-slate-100 text-slate-700 border border-slate-200'} touch-action">
+                            At Sea
+                        </button>
+                        <button onclick="updateStatus('${r.id}', 'arrived_port')" 
+                                class="flex-1 min-h-[36px] py-1 px-2 rounded-lg font-bold text-[11px] ${r.transit_status === 'arrived_port' ? 'bg-amber-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 border border-slate-200'} touch-action">
+                            Port Docked
+                        </button>
+                        <button onclick="updateStatus('${r.id}', 'admitted_zcmc')" 
+                                class="flex-1 min-h-[36px] py-1 px-2 rounded-lg font-bold text-[11px] ${r.transit_status === 'admitted_zcmc' ? 'bg-zcmc-forest text-white shadow-xs' : 'bg-slate-100 text-slate-700 border border-slate-200'} touch-action">
+                            Admitted ER
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        fetchDockReferrals();
+    </script>
+</body>
+</html>
