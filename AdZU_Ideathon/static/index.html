@@ -4,13 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#064E3B">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ZCMC Regional Health Exchange | Mobile App</title>
-    <!-- Official ZCMC Typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>ZCMC Regional Health Exchange | Referral Triage</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -18,16 +13,16 @@
                 extend: {
                     colors: {
                         zcmc: {
-                            forest: '#064E3B',       /* Institutional Forest Green */
-                            emerald: '#087A55',      /* Deep Emerald */
-                            mint: '#70B89B',         /* Medical Mint */
-                            ivory: '#F7F5EC',        /* Warm Clinical Ivory Canvas */
-                            gold: '#C8A64D',         /* Royal Champagne Gold */
-                            antiquegold: '#9C7A2F',  /* Deep Antique Gold */
-                            surface: '#FFFFFF',      /* Pure White Surface */
-                            border: '#E2E8F0',       /* Clean Clinical Border */
-                            textMain: '#0F172A',     /* Slate 900 Primary Text */
-                            textMuted: '#64748B'     /* Slate 500 Secondary Text */
+                            forest: '#064E3B',
+                            emerald: '#087A55',
+                            mint: '#70B89B',
+                            ivory: '#F7F5EC',
+                            gold: '#C8A64D',
+                            antiquegold: '#9C7A2F',
+                            surface: '#FFFFFF',
+                            border: '#E2E8F0',
+                            textMain: '#0F172A',
+                            textMuted: '#64748B'
                         }
                     },
                     fontFamily: {
@@ -39,415 +34,240 @@
             }
         }
     </script>
+    <!-- Component CSS & JS Engine -->
+    <link rel="stylesheet" href="/components.css">
+    <script src="/components.js"></script>
     <style>
-        body { 
-            font-family: 'Source Sans 3', sans-serif; 
-            background-color: #F7F5EC; 
-            color: #0F172A;
-            -webkit-tap-highlight-color: transparent;
+        @media (min-width: 1024px) {
+            #formSection, #queueSection { display: flex !important; }
         }
-        h1, h2, h3, h4, .font-heading { font-family: 'Montserrat', sans-serif; }
-        .font-formal { font-family: 'Libre Baskerville', serif; }
-        
-        /* Mobile touch button feedback */
-        .touch-action:active { transform: scale(0.97); }
-        
-        /* Safe area bottom padding for iPhone home indicator and bottom nav */
-        .pb-safe { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
-        
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
     </style>
 </head>
-<body class="min-h-screen antialiased flex flex-col bg-zcmc-ivory pb-safe">
+<body class="min-h-screen antialiased bg-zcmc-ivory text-zcmc-textMain">
 
-    <!-- Toast Notification (Mobile Positioned Top) -->
-    <div id="toastContainer" class="fixed top-3 left-4 right-4 z-50 flex flex-col gap-2 max-w-md mx-auto pointer-events-none"></div>
+    <div class="flex min-h-screen">
+        <!-- Reusable Component: Desktop Institutional Sidebar -->
+        <div id="zcmcSidebarMount" class="hidden md:flex"></div>
 
-    <!-- Mobile-First Sticky App Header -->
-    <header class="bg-zcmc-forest text-white sticky top-0 z-40 border-b-2 border-zcmc-gold shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
-            
-            <!-- Brand Mark & Title -->
-            <div class="flex items-center gap-2.5 min-w-0">
-                <div class="relative w-8 h-8 flex-shrink-0 flex items-center justify-center bg-zcmc-forest rounded-md border border-zcmc-mint/40 shadow-xs">
-                    <div class="absolute w-5 h-5 border border-zcmc-gold rounded-xs translate-x-0.5 translate-y-0.5 opacity-90"></div>
-                    <div class="relative w-5 h-5 bg-zcmc-emerald border border-zcmc-mint rounded-xs flex items-center justify-center text-white font-bold text-xs">
-                        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M19 10.5h-5.5V5a1.5 1.5 0 0 0-3 0v5.5H5a1.5 1.5 0 0 0 0 3h5.5V19a1.5 1.5 0 0 0 3 0v-5.5H19a1.5 1.5 0 0 0 0-3z"/>
-                        </svg>
-                    </div>
-                </div>
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 pb-safe">
+            <!-- Reusable Component: Mobile App Header -->
+            <div id="zcmcMobileHeaderMount"></div>
 
-                <div class="min-w-0">
-                    <div class="flex items-center gap-1.5">
-                        <h1 class="text-xs sm:text-sm font-bold tracking-tight text-white font-heading truncate">
-                            ZCMC HEALTH
-                        </h1>
-                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-zcmc-gold/20 text-zcmc-gold border border-zcmc-gold/40 uppercase">
-                            ZAMBASULTA
-                        </span>
-                    </div>
-                    <p class="text-[10px] text-zcmc-mint font-formal italic truncate">
-                        Care &bull; Commitment &bull; Compassion
-                    </p>
-                </div>
-            </div>
-
-            <!-- Connectivity Status Pill & Quick Vault Button -->
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <!-- Status Pill -->
-                <button onclick="openVaultModal()" id="connectionStatus" 
-                        class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-950/70 border border-zcmc-mint/40 text-zcmc-mint touch-action">
-                    <span id="connDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span id="connText" class="text-[10px] sm:text-xs">Online</span>
-                </button>
-
-                <!-- Forward / Sync Outbox Button -->
-                <button id="syncBtn" onclick="flushOfflineQueue()" 
-                        class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-zcmc-emerald hover:bg-zcmc-mint text-white transition border border-white/20 touch-action">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
-                    <span id="queueBadge" class="px-1.5 py-0.2 rounded-full bg-zcmc-gold text-zcmc-forest font-extrabold text-[10px]">0</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Pitch Demonstration Toggle Strip (Island Network Simulation) -->
-    <div class="bg-slate-900 text-white px-4 py-1.5 text-xs flex items-center justify-between border-b border-white/10">
-        <span class="text-slate-400 text-[11px]">Network Simulation:</span>
-        <div class="flex items-center gap-1">
-            <button id="simOnlineBtn" onclick="setSimulatedNetwork(true)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white transition">
-                Live ZCMC Link
-            </button>
-            <button id="simOfflineBtn" onclick="setSimulatedNetwork(false)" class="px-2 py-0.5 rounded text-[10px] font-bold text-slate-300 hover:bg-slate-800 transition">
-                Island Outage (GIDA)
-            </button>
-        </div>
-    </div>
-
-    <!-- Offline Alert Banner (Shows when simulated/real offline) -->
-    <div id="offlineNotice" class="hidden bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-900 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-amber-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            <span class="text-[11px] leading-tight">
-                <strong>Offline Mode:</strong> Data is encrypted with <strong>AES-256</strong> on this device and forwards upon reconnection.
-            </span>
-        </div>
-        <button onclick="setSimulatedNetwork(true)" class="text-[11px] font-bold text-amber-800 underline flex-shrink-0">
-            Reconnect
-        </button>
-    </div>
-
-    <!-- Mobile Segmented Controller (Switch between New Referral Form & Active Queue on phones) -->
-    <div class="lg:hidden max-w-md mx-auto w-full px-4 pt-3 pb-1">
-        <div class="bg-slate-200/80 p-1 rounded-xl flex items-center text-xs font-bold text-slate-700 border border-slate-300/50">
-            <button id="segBtnForm" onclick="switchMobileView('form')" class="flex-1 py-2 rounded-lg bg-zcmc-forest text-white shadow-xs transition touch-action flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-                </svg>
-                <span>New Referral</span>
-            </button>
-            <button id="segBtnQueue" onclick="switchMobileView('queue')" class="flex-1 py-2 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                <span>Active Queue</span>
-                <span id="mobileQueueBadge" class="px-1.5 py-0.2 rounded-full bg-slate-300 text-slate-800 text-[10px]">0</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Compact KPI Metrics Strip (Horizontal scroll on mobile) -->
-    <section class="max-w-7xl mx-auto px-4 pt-2 pb-1 w-full overflow-x-auto">
-        <div class="flex lg:grid lg:grid-cols-4 gap-2.5 sm:gap-3 min-w-[550px] lg:min-w-0">
-            
-            <div class="flex-1 bg-zcmc-surface rounded-xl p-3 border border-zcmc-border shadow-xs flex items-center justify-between">
-                <div>
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-zcmc-textMuted font-heading">Total Referrals</span>
-                    <span id="kpiTotal" class="text-lg sm:text-xl font-extrabold text-zcmc-forest font-heading">0</span>
-                </div>
-                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-zcmc-emerald flex items-center justify-center border border-emerald-100">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="flex-1 bg-zcmc-surface rounded-xl p-3 border border-rose-200 shadow-xs flex items-center justify-between">
-                <div>
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-rose-700 font-heading">STAT Critical</span>
-                    <span id="kpiStat" class="text-lg sm:text-xl font-extrabold text-rose-800 font-heading">0</span>
-                </div>
-                <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="flex-1 bg-zcmc-surface rounded-xl p-3 border border-blue-200 shadow-xs flex items-center justify-between">
-                <div>
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-blue-700 font-heading">In Sea Transit</span>
-                    <span id="kpiTransit" class="text-lg sm:text-xl font-extrabold text-blue-700 font-heading">0</span>
-                </div>
-                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="flex-1 bg-zcmc-surface rounded-xl p-3 border border-amber-200 shadow-xs flex items-center justify-between">
-                <div>
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-amber-700 font-heading">Device Vault</span>
-                    <span id="kpiQueue" class="text-lg sm:text-xl font-extrabold text-amber-800 font-heading">0</span>
-                </div>
-                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                    </svg>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- Main Workspace (Responsive: Single view on mobile, dual pane on desktop) -->
-    <main class="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 lg:grid-cols-12 gap-5 flex-grow w-full">
-        
-        <!-- View 1: Referral Intake Form (Mobile switchable, Desktop always visible) -->
-        <section id="formSection" class="lg:col-span-5 bg-zcmc-surface border border-zcmc-border rounded-xl shadow-xs overflow-hidden flex flex-col">
-            <div class="bg-slate-50 border-b border-zcmc-border px-4 py-3 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-2.5 h-2.5 rounded-full bg-zcmc-emerald"></div>
-                    <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-zcmc-forest font-heading">
-                        New GIDA Referral Intake
-                    </h2>
-                </div>
-                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-zcmc-emerald bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    AES-256 Sealed
-                </span>
-            </div>
-
-            <form id="referralForm" onsubmit="handleReferralSubmit(event)" class="p-4 sm:p-5 space-y-3.5 flex-grow flex flex-col justify-between">
-                <div class="space-y-3.5">
-                    
-                    <!-- Patient Name -->
-                    <div>
-                        <label for="patientName" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
-                            Patient Full Name <span class="text-rose-600">*</span>
-                        </label>
-                        <input type="text" id="patientName" required placeholder="e.g., Fatima S. Alih" 
-                               class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
-                    </div>
-
-                    <!-- PhilHealth ID & Urgency -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label for="philhealthId" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
-                                PhilHealth ID
-                            </label>
-                            <input type="text" id="philhealthId" placeholder="12-345678901-2" inputmode="numeric"
-                                   class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
-                        </div>
-                        <div>
-                            <label for="urgency" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
-                                Triage Urgency <span class="text-rose-600">*</span>
-                            </label>
-                            <select id="urgency" class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-zcmc-textMain font-semibold focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
-                                <option value="stat" selected class="text-rose-700 font-bold">STAT (Life Threat)</option>
-                                <option value="asap" class="text-amber-700 font-bold">ASAP (Immediate 2-4h)</option>
-                                <option value="urgent" class="text-blue-700 font-semibold">Urgent (Within 24h)</option>
-                                <option value="routine" class="text-slate-700">Routine Non-Emergency</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Origin Island Facility & Transit Stage -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label for="originFacility" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
-                                Origin Facility (GIDA) <span class="text-rose-600">*</span>
-                            </label>
-                            <select id="originFacility" class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-zcmc-textMain focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
-                                <option value="Basilan General Hospital">Basilan General Hospital</option>
-                                <option value="Lamitan District Hospital">Lamitan District Hospital</option>
-                                <option value="Sulu Provincial Hospital">Sulu Provincial Hospital (Jolo)</option>
-                                <option value="Tawi-Tawi Integrated Provincial Health Office">Tawi-Tawi IPHO (Bongao)</option>
-                                <option value="Luuk District Hospital">Luuk District Hospital (Sulu)</option>
-                                <option value="Mapun Municipal Hospital">Mapun Island Hospital</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="transitStatus" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
-                                Transit Stage <span class="text-rose-600">*</span>
-                            </label>
-                            <select id="transitStatus" class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-zcmc-textMain font-medium focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
-                                <option value="pending_transit" selected>1. Pending Boat Departure</option>
-                                <option value="in_maritime_transit">2. In Maritime Sea Transit</option>
-                                <option value="arrived_port">3. Arrived at Zamboanga Port</option>
-                                <option value="admitted_zcmc">4. Admitted at ZCMC ER</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Primary Clinical Diagnosis -->
-                    <div>
-                        <label for="primaryDiagnosis" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
-                            Primary Clinical Diagnosis <span class="text-rose-600">*</span>
-                        </label>
-                        <input type="text" id="primaryDiagnosis" required placeholder="e.g., Acute Perforated Appendicitis with Peritonitis" 
-                               class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
-                    </div>
-
-                    <!-- Clinical Vitals -->
-                    <div>
-                        <label for="clinicalNotes" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
-                            Clinical Vitals & Sea Instructions
-                        </label>
-                        <textarea id="clinicalNotes" rows="2" placeholder="BP: 130/85, HR: 98, SpO2: 97%. IV line patent. Sea ambulance escort active." 
-                                  class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition"></textarea>
-                    </div>
-
-                </div>
-
-                <!-- Submit Button -->
-                <div class="pt-2">
-                    <button type="submit" id="submitBtn" 
-                            class="w-full min-h-[48px] py-3 px-4 rounded-xl bg-zcmc-forest hover:bg-zcmc-emerald active:bg-zcmc-forest text-white font-bold text-sm tracking-wide transition shadow-sm border border-zcmc-gold/40 flex items-center justify-center gap-2 touch-action">
-                        <svg class="w-4 h-4 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Mobile Segmented Controller -->
+            <div class="lg:hidden max-w-md mx-auto w-full px-4 pt-3 pb-1">
+                <div class="bg-slate-200/80 p-1 rounded-xl flex items-center text-xs font-bold text-slate-700 border border-slate-300/50">
+                    <button id="segBtnForm" onclick="switchMobileView('form')" class="flex-1 py-2 rounded-lg bg-zcmc-forest text-white shadow-xs transition touch-action flex items-center justify-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
                         </svg>
-                        <span>ISSUE HL7 FHIR REFERRAL</span>
+                        <span>New Referral</span>
                     </button>
-                    <p class="text-[10px] text-center text-zcmc-textMuted mt-1.5">
-                        Client-side AES-256 encryption active &bull; Works with zero network
-                    </p>
-                </div>
-            </form>
-        </section>
-
-        <!-- View 2: Active Maritime Triage Queue -->
-        <section id="queueSection" class="hidden lg:flex lg:col-span-7 flex-col space-y-3">
-            
-            <!-- Mobile Queue Search & Filters -->
-            <div class="bg-zcmc-surface border border-zcmc-border rounded-xl p-3 shadow-xs space-y-2.5">
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    <button id="segBtnQueue" onclick="switchMobileView('queue')" class="flex-1 py-2 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                    </span>
-                    <input type="text" id="searchInput" oninput="filterReferrals()" placeholder="Search patient, ID, or island..." 
-                           class="w-full pl-9 pr-3 py-2 text-xs min-h-[40px] bg-slate-50 border border-slate-200 rounded-lg text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
-                </div>
-
-                <!-- Filter Pills -->
-                <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs">
-                    <button onclick="setFilter('all')" id="filter-all" class="filter-pill px-3 py-1.5 rounded-lg font-bold bg-zcmc-forest text-white whitespace-nowrap touch-action">All</button>
-                    <button onclick="setFilter('stat')" id="filter-stat" class="filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action">STAT</button>
-                    <button onclick="setFilter('in_maritime_transit')" id="filter-in_maritime_transit" class="filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action">At Sea</button>
-                    <button onclick="setFilter('arrived_port')" id="filter-arrived_port" class="filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action">At Port</button>
+                        <span>Active Queue</span>
+                        <span id="mobileQueueBadge" class="px-1.5 py-0.2 rounded-full bg-slate-300 text-slate-800 text-[10px]">0</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Queue Cards Container -->
-            <div id="referralsContainer" class="space-y-3 flex-grow overflow-y-auto pr-0.5">
-                <!-- Dynamically rendered -->
-            </div>
-
-        </section>
-    </main>
-
-    <!-- Native-like Mobile Bottom Navigation Bar (Fixed for Mobile Screens) -->
-    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-zcmc-forest text-white border-t-2 border-zcmc-gold/60 shadow-2xl flex items-center justify-around px-2 py-1.5 md:py-2">
-        
-        <!-- Tab 1: New Referral -->
-        <button onclick="switchMobileView('form')" id="navTabForm" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-zcmc-gold touch-action">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-            </svg>
-            <span class="text-[10px] font-bold mt-0.5">Refer</span>
-        </button>
-
-        <!-- Tab 2: Queue -->
-        <button onclick="switchMobileView('queue')" id="navTabQueue" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action relative">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            <span class="text-[10px] font-semibold mt-0.5">Queue</span>
-            <span id="bottomNavQueueBadge" class="absolute top-1 right-2 w-2 h-2 rounded-full bg-rose-500 hidden"></span>
-        </button>
-
-        <!-- Tab 3: Port Radar -->
-        <a href="/dock.html" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
-            </svg>
-            <span class="text-[10px] font-semibold mt-0.5">Radar</span>
-        </a>
-
-        <!-- Tab 4: DOH Analytics -->
-        <a href="/analytics.html" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-            <span class="text-[10px] font-semibold mt-0.5">Stats</span>
-        </a>
-
-        <!-- Tab 5: AES-256 Vault -->
-        <button onclick="openVaultModal()" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action relative">
-            <svg class="w-5 h-5 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            <span class="text-[10px] font-semibold mt-0.5">Vault</span>
-            <span id="bottomNavVaultDot" class="absolute top-1 right-2 w-2 h-2 rounded-full bg-amber-400 hidden"></span>
-        </button>
-
-    </nav>
-
-    <!-- AES-256 Client-Side Encrypted Vault Inspector Modal (Mobile Optimized) -->
-    <div id="vaultModal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-300 overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="bg-zcmc-forest text-white px-4 py-3 flex items-center justify-between border-b-2 border-zcmc-gold">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                    </svg>
-                    <div>
-                        <h3 class="font-bold text-xs sm:text-sm font-heading">Device Encrypted Vault</h3>
-                        <p class="text-[10px] text-zcmc-mint">NIST AES-GCM 256-bit Hardware-Bound Cache</p>
+            <!-- Compact KPI Metrics Strip -->
+            <section class="max-w-7xl mx-auto px-4 pt-3 pb-1 w-full overflow-x-auto">
+                <div class="flex lg:grid lg:grid-cols-4 gap-2.5 sm:gap-3 min-w-[550px] lg:min-w-0">
+                    
+                    <div class="flex-1 bg-zcmc-surface rounded-xl p-3 border border-zcmc-border shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-zcmc-textMuted font-heading">Total Referrals</span>
+                            <span id="kpiTotal" class="text-lg sm:text-xl font-extrabold text-zcmc-forest font-heading">0</span>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-zcmc-emerald flex items-center justify-center border border-emerald-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
                     </div>
+
+                    <div class="flex-1 bg-zcmc-surface rounded-xl p-3 border border-rose-200 shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-rose-700 font-heading">STAT Critical</span>
+                            <span id="kpiStat" class="text-lg sm:text-xl font-extrabold text-rose-800 font-heading">0</span>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 bg-zcmc-surface rounded-xl p-3 border border-blue-200 shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-blue-700 font-heading">In Sea Transit</span>
+                            <span id="kpiTransit" class="text-lg sm:text-xl font-extrabold text-blue-700 font-heading">0</span>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 bg-zcmc-surface rounded-xl p-3 border border-amber-200 shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-amber-700 font-heading">Device Vault</span>
+                            <span id="kpiQueue" class="text-lg sm:text-xl font-extrabold text-amber-800 font-heading zcmc-vault-count">0</span>
+                        </div>
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                        </div>
+                    </div>
+
                 </div>
-                <button onclick="closeVaultModal()" class="text-slate-300 hover:text-white p-1 rounded-md transition text-lg leading-none">&times;</button>
-            </div>
-            
-            <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2 text-xs">
-                <span class="text-slate-600 font-semibold text-[11px]">PBKDF2 &bull; 100k Iterations</span>
-                <button onclick="flushOfflineQueue()" class="px-3 py-1 bg-zcmc-emerald hover:bg-zcmc-forest text-white rounded-lg font-bold text-xs shadow-xs transition flex items-center gap-1.5 touch-action">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
-                    <span>Push to ZCMC</span>
-                </button>
-            </div>
+            </section>
 
-            <div id="vaultContentContainer" class="p-3 overflow-y-auto flex-grow space-y-2.5">
-                <!-- Records -->
-            </div>
+            <!-- Main Workspace: Intake Form & Active Queue -->
+            <main class="max-w-7xl mx-auto px-4 py-3 grid grid-cols-1 lg:grid-cols-12 gap-5 flex-grow w-full">
+                
+                <!-- View 1: Referral Intake Form -->
+                <section id="formSection" class="lg:col-span-5 bg-zcmc-surface border border-zcmc-border rounded-xl shadow-xs overflow-hidden flex flex-col">
+                    <div class="bg-slate-50 border-b border-zcmc-border px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2.5 h-2.5 rounded-full bg-zcmc-emerald"></div>
+                            <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-zcmc-forest font-heading">
+                                New GIDA Referral Intake
+                            </h2>
+                        </div>
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-zcmc-emerald bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            AES-256 Sealed
+                        </span>
+                    </div>
 
-            <div class="px-4 py-2.5 bg-slate-100 border-t border-slate-200 text-[11px] text-slate-500 text-center">
-                Sealed locally &bull; Automatic zero-loss sync upon connection recovery
-            </div>
+                    <form id="referralForm" onsubmit="handleReferralSubmit(event)" class="p-4 sm:p-5 space-y-3.5 flex-grow flex flex-col justify-between">
+                        <div class="space-y-3.5">
+                            <div>
+                                <label for="patientName" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
+                                    Patient Full Name <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" id="patientName" required placeholder="e.g., Fatima S. Alih" 
+                                       class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="philhealthId" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
+                                        PhilHealth ID
+                                    </label>
+                                    <input type="text" id="philhealthId" placeholder="12-345678901-2" inputmode="numeric"
+                                           class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
+                                </div>
+                                <div>
+                                    <label for="urgency" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
+                                        Triage Urgency <span class="text-rose-600">*</span>
+                                    </label>
+                                    <select id="urgency" class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-zcmc-textMain font-semibold focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
+                                        <option value="stat" selected class="text-rose-700 font-bold">STAT (Life Threat)</option>
+                                        <option value="asap" class="text-amber-700 font-bold">ASAP (Immediate 2-4h)</option>
+                                        <option value="urgent" class="text-blue-700 font-semibold">Urgent (Within 24h)</option>
+                                        <option value="routine" class="text-slate-700">Routine Non-Emergency</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label for="originFacility" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
+                                        Origin Facility (GIDA) <span class="text-rose-600">*</span>
+                                    </label>
+                                    <select id="originFacility" class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-zcmc-textMain focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
+                                        <option value="Basilan General Hospital">Basilan General Hospital</option>
+                                        <option value="Lamitan District Hospital">Lamitan District Hospital</option>
+                                        <option value="Sulu Provincial Hospital">Sulu Provincial Hospital (Jolo)</option>
+                                        <option value="Tawi-Tawi Integrated Provincial Health Office">Tawi-Tawi IPHO (Bongao)</option>
+                                        <option value="Luuk District Hospital">Luuk District Hospital (Sulu)</option>
+                                        <option value="Mapun Municipal Hospital">Mapun Island Hospital</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="transitStatus" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
+                                        Transit Stage <span class="text-rose-600">*</span>
+                                    </label>
+                                    <select id="transitStatus" class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-zcmc-textMain font-medium focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
+                                        <option value="pending_transit" selected>1. Pending Boat Departure</option>
+                                        <option value="in_maritime_transit">2. In Maritime Sea Transit</option>
+                                        <option value="arrived_port">3. Arrived at Zamboanga Port</option>
+                                        <option value="admitted_zcmc">4. Admitted at ZCMC ER</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="primaryDiagnosis" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
+                                    Primary Clinical Diagnosis <span class="text-rose-600">*</span>
+                                </label>
+                                <input type="text" id="primaryDiagnosis" required placeholder="e.g., Acute Perforated Appendicitis with Peritonitis" 
+                                       class="w-full min-h-[44px] bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
+                            </div>
+
+                            <div>
+                                <label for="clinicalNotes" class="block text-xs font-bold uppercase tracking-wider text-zcmc-textMain mb-1">
+                                    Clinical Vitals &amp; Sea Instructions
+                                </label>
+                                <textarea id="clinicalNotes" rows="2" placeholder="BP: 130/85, HR: 98, SpO2: 97%. IV line patent. Sea ambulance escort active." 
+                                          class="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-sm text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" id="submitBtn" 
+                                    class="w-full min-h-[48px] py-3 px-4 rounded-xl bg-zcmc-forest hover:bg-zcmc-emerald active:bg-zcmc-forest text-white font-bold text-sm tracking-wide transition shadow-sm border border-zcmc-gold/40 flex items-center justify-center gap-2 touch-action">
+                                <svg class="w-4 h-4 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                <span>ISSUE HL7 FHIR REFERRAL</span>
+                            </button>
+                            <p class="text-[10px] text-center text-zcmc-textMuted mt-1.5">
+                                Client-side AES-256 encryption active &bull; Store-and-forward outbox
+                            </p>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- View 2: Active Maritime Triage Queue -->
+                <section id="queueSection" class="hidden lg:flex lg:col-span-7 flex-col space-y-3">
+                    <div class="bg-zcmc-surface border border-zcmc-border rounded-xl p-3 shadow-xs space-y-2.5">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </span>
+                            <input type="text" id="searchInput" oninput="filterReferrals()" placeholder="Search patient, ID, or island..." 
+                                   class="w-full pl-9 pr-3 py-2 text-xs min-h-[40px] bg-slate-50 border border-slate-200 rounded-lg text-zcmc-textMain placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-zcmc-emerald focus:border-zcmc-emerald transition">
+                        </div>
+
+                        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs">
+                            <button onclick="setFilter('all')" id="filter-all" class="filter-pill px-3 py-1.5 rounded-lg font-bold bg-zcmc-forest text-white whitespace-nowrap touch-action">All</button>
+                            <button onclick="setFilter('stat')" id="filter-stat" class="filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action">STAT</button>
+                            <button onclick="setFilter('in_maritime_transit')" id="filter-in_maritime_transit" class="filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action">At Sea</button>
+                            <button onclick="setFilter('arrived_port')" id="filter-arrived_port" class="filter-pill px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:bg-slate-100 whitespace-nowrap touch-action">At Port</button>
+                        </div>
+                    </div>
+
+                    <div id="referralsContainer" class="space-y-3 flex-grow overflow-y-auto pr-0.5 max-h-[calc(100vh-280px)]"></div>
+                </section>
+            </main>
+
+            <!-- Reusable Component: Desktop Institutional Footer -->
+            <div id="zcmcFooterMount"></div>
+            <!-- Reusable Component: Mobile Bottom Navigation -->
+            <div id="zcmcBottomNavMount"></div>
         </div>
     </div>
 
-    <!-- FHIR Resource Modal (Mobile Optimized) -->
+    <!-- FHIR ServiceRequest Modal -->
     <div id="fhirModal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-300 overflow-hidden flex flex-col max-h-[90vh]">
             <div class="bg-zcmc-forest text-white px-4 py-3 flex items-center justify-between border-b-2 border-zcmc-gold">
@@ -471,25 +291,21 @@
         </div>
     </div>
 
-    <!-- Web Crypto AES-256 & Store-and-Forward Engine -->
     <script>
-        const VAULT_STORAGE_KEY = "zcmc_secure_vault_records_v1";
-        const DEVICE_SECRET_SEED = "ZCMC-ZAMBASULTA-EDGE-KEY-2026-CHDIX";
-        let isHardwareOnline = navigator.onLine;
-        let isSimulatedOnline = true;
         let allReferrals = [];
         let activeFilter = 'all';
         let currentMobileView = 'form';
 
-        // Mobile View Switcher (between Form and Queue)
+        // Initialize component layout
+        ZCMC.init('referrals');
+        ZCMC.onSync(() => fetchReferrals());
+
         function switchMobileView(view) {
             currentMobileView = view;
             const formSec = document.getElementById("formSection");
             const queueSec = document.getElementById("queueSection");
             const segBtnForm = document.getElementById("segBtnForm");
             const segBtnQueue = document.getElementById("segBtnQueue");
-            const navTabForm = document.getElementById("navTabForm");
-            const navTabQueue = document.getElementById("navTabQueue");
 
             if (view === 'form') {
                 formSec.classList.remove("hidden");
@@ -498,8 +314,6 @@
 
                 segBtnForm.className = "flex-1 py-2 rounded-lg bg-zcmc-forest text-white shadow-xs transition touch-action flex items-center justify-center gap-1.5";
                 segBtnQueue.className = "flex-1 py-2 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1.5";
-                navTabForm.className = "flex flex-col items-center justify-center p-1.5 min-w-[56px] text-zcmc-gold touch-action";
-                navTabQueue.className = "flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action relative";
             } else {
                 formSec.classList.add("hidden");
                 queueSec.classList.remove("hidden");
@@ -507,153 +321,7 @@
 
                 segBtnQueue.className = "flex-1 py-2 rounded-lg bg-zcmc-forest text-white shadow-xs transition touch-action flex items-center justify-center gap-1.5";
                 segBtnForm.className = "flex-1 py-2 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1.5";
-                navTabQueue.className = "flex flex-col items-center justify-center p-1.5 min-w-[56px] text-zcmc-gold touch-action relative";
-                navTabForm.className = "flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action";
             }
-        }
-
-        // Native Web Crypto API
-        async function getDerivedCryptoKey() {
-            const enc = new TextEncoder();
-            const keyMaterial = await window.crypto.subtle.importKey(
-                "raw",
-                enc.encode(DEVICE_SECRET_SEED),
-                { name: "PBKDF2" },
-                false,
-                ["deriveKey"]
-            );
-            return window.crypto.subtle.deriveKey(
-                {
-                    name: "PBKDF2",
-                    salt: enc.encode("ZCMC_RURAL_GIDA_SALT_2026"),
-                    iterations: 100000,
-                    hash: "SHA-256"
-                },
-                keyMaterial,
-                { name: "AES-GCM", length: 256 },
-                false,
-                ["encrypt", "decrypt"]
-            );
-        }
-
-        async function encryptReferralPayload(record) {
-            const key = await getDerivedCryptoKey();
-            const iv = window.crypto.getRandomValues(new Uint8Array(12));
-            const enc = new TextEncoder();
-            const encodedData = enc.encode(JSON.stringify(record));
-            
-            const encryptedBuffer = await window.crypto.subtle.encrypt(
-                { name: "AES-GCM", iv: iv },
-                key,
-                encodedData
-            );
-
-            return {
-                id: record.id,
-                algorithm: "AES-GCM-256",
-                iv: btoa(String.fromCharCode(...new Uint8Array(iv))),
-                ciphertext: btoa(String.fromCharCode(...new Uint8Array(encryptedBuffer))),
-                timestamp: Date.now(),
-                origin_facility: record.origin_facility,
-                urgency: record.urgency,
-                transit_status: record.transit_status,
-                masked_patient: record.patient_name.replace(/^(.).*(.)$/, "$1***$2"),
-                primary_diagnosis: record.primary_diagnosis
-            };
-        }
-
-        async function decryptReferralPayload(envelope) {
-            const key = await getDerivedCryptoKey();
-            const ivBytes = new Uint8Array(atob(envelope.iv).split("").map(c => c.charCodeAt(0)));
-            const cipherBytes = new Uint8Array(atob(envelope.ciphertext).split("").map(c => c.charCodeAt(0)));
-            
-            const decryptedBuffer = await window.crypto.subtle.decrypt(
-                { name: "AES-GCM", iv: ivBytes },
-                key,
-                cipherBytes
-            );
-
-            const dec = new TextDecoder();
-            return JSON.parse(dec.decode(decryptedBuffer));
-        }
-
-        function getEncryptedVault() {
-            try {
-                return JSON.parse(localStorage.getItem(VAULT_STORAGE_KEY) || "[]");
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveEncryptedVault(envelopes) {
-            localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(envelopes));
-            updateVaultBadges();
-        }
-
-        function updateVaultBadges() {
-            const count = getEncryptedVault().length;
-            document.getElementById("queueBadge").innerText = count;
-            document.getElementById("kpiQueue").innerText = count;
-            const dot = document.getElementById("bottomNavVaultDot");
-            if (dot) dot.classList.toggle("hidden", count === 0);
-        }
-
-        function isEffectiveOnline() {
-            return isHardwareOnline && isSimulatedOnline;
-        }
-
-        function setSimulatedNetwork(online) {
-            isSimulatedOnline = online;
-            const onlineBtn = document.getElementById("simOnlineBtn");
-            const offlineBtn = document.getElementById("simOfflineBtn");
-            const notice = document.getElementById("offlineNotice");
-
-            if (online) {
-                onlineBtn.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white transition";
-                offlineBtn.className = "px-2 py-0.5 rounded text-[10px] font-bold text-slate-300 hover:bg-slate-800 transition";
-                notice.classList.add("hidden");
-                showToast("Connected to ZCMC Central Link. Forwarding stored records...", "success");
-                flushOfflineQueue();
-            } else {
-                onlineBtn.className = "px-2 py-0.5 rounded text-[10px] font-bold text-slate-300 hover:bg-slate-800 transition";
-                offlineBtn.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white transition";
-                notice.classList.remove("hidden");
-                showToast("Island Outage simulated. Store-and-forward AES-256 active.", "error");
-            }
-            updateOnlineBadge();
-        }
-
-        function updateOnlineBadge() {
-            const badge = document.getElementById("connectionStatus");
-            const dot = document.getElementById("connDot");
-            const text = document.getElementById("connText");
-
-            if (isEffectiveOnline()) {
-                badge.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-950/70 border border-zcmc-mint/40 text-zcmc-mint touch-action";
-                dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-                text.innerText = "Online";
-            } else {
-                badge.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-950/70 border border-rose-500/50 text-rose-300 touch-action";
-                dot.className = "w-2 h-2 rounded-full bg-rose-400";
-                text.innerText = "Offline (Vault)";
-            }
-        }
-
-        window.addEventListener('online', () => { isHardwareOnline = true; updateOnlineBadge(); flushOfflineQueue(); });
-        window.addEventListener('offline', () => { isHardwareOnline = false; updateOnlineBadge(); });
-
-        function showToast(message, type = 'success') {
-            const container = document.getElementById("toastContainer");
-            const toast = document.createElement("div");
-            const bgClass = type === 'success' ? 'bg-zcmc-forest text-white border-zcmc-gold' : 'bg-rose-900 text-white border-rose-400';
-            toast.className = `${bgClass} border px-3.5 py-2.5 rounded-xl shadow-xl text-xs font-medium flex items-center justify-between gap-3 pointer-events-auto transition transform duration-200 translate-y-1 opacity-0`;
-            toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white">&times;</button>`;
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.remove('translate-y-1', 'opacity-0'), 10);
-            setTimeout(() => {
-                toast.classList.add('opacity-0');
-                setTimeout(() => toast.remove(), 250);
-            }, 3500);
         }
 
         async function handleReferralSubmit(e) {
@@ -672,10 +340,10 @@
                 primary_diagnosis: document.getElementById("primaryDiagnosis").value.trim(),
                 transit_status: document.getElementById("transitStatus").value,
                 clinical_notes: document.getElementById("clinicalNotes").value.trim(),
-                client_id: "mobile-edge-terminal"
+                client_id: "edge-terminal"
             };
 
-            if (isEffectiveOnline()) {
+            if (ZCMC.isEffectiveOnline()) {
                 try {
                     const res = await fetch("/api/referrals", {
                         method: "POST",
@@ -683,11 +351,10 @@
                         body: JSON.stringify(referralData)
                     });
                     if (res.ok) {
-                        showToast(`Referral ${referralId} synced to ZCMC Hub.`, "success");
+                        ZCMC.showToast(`Referral ${referralId} synced to ZCMC Hub.`, "success");
                         document.getElementById("referralForm").reset();
                         fetchReferrals();
                         submitBtn.disabled = false;
-                        // On mobile switch to queue to view it
                         if (window.innerWidth < 1024) switchMobileView('queue');
                         return;
                     }
@@ -697,58 +364,20 @@
             }
 
             try {
-                const encryptedEnvelope = await encryptReferralPayload(referralData);
-                const vault = getEncryptedVault();
-                vault.unshift(encryptedEnvelope);
-                saveEncryptedVault(vault);
+                const encrypted = await ZCMC.encryptPayload(referralData);
+                const vault = ZCMC.getVault();
+                vault.unshift(encrypted);
+                ZCMC.saveVault(vault);
                 
-                showToast(`Offline: Referral ${referralId} sealed in AES-256 vault.`, "success");
+                ZCMC.showToast(`Offline: Referral ${referralId} sealed in AES-256 vault.`, "success");
                 document.getElementById("referralForm").reset();
                 renderLocalPipeline();
                 if (window.innerWidth < 1024) switchMobileView('queue');
             } catch (cryptoErr) {
                 console.error("Encryption failure:", cryptoErr);
-                showToast("Cryptographic error on edge device.", "error");
+                ZCMC.showToast("Cryptographic error on edge device.", "error");
             } finally {
                 submitBtn.disabled = false;
-            }
-        }
-
-        async function flushOfflineQueue() {
-            if (!isEffectiveOnline()) {
-                showToast("Network is offline. Reconnect to forward records.", "error");
-                return;
-            }
-
-            const vault = getEncryptedVault();
-            if (vault.length === 0) {
-                showToast("Vault outbox is clear. All records synced.", "success");
-                return;
-            }
-
-            try {
-                const decryptedRecords = [];
-                for (const envelope of vault) {
-                    const clear = await decryptReferralPayload(envelope);
-                    decryptedRecords.push(clear);
-                }
-
-                const res = await fetch("/api/sync/push", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ client_id: "mobile-edge-terminal", records: decryptedRecords })
-                });
-
-                if (res.ok) {
-                    const result = await res.json();
-                    saveEncryptedVault([]);
-                    showToast(`Synced ${result.synced_count} offline referrals to ZCMC Hub.`, "success");
-                    fetchReferrals();
-                    closeVaultModal();
-                }
-            } catch (err) {
-                console.error("Flush failed:", err);
-                showToast("Forwarding failed. Data remains safe in vault.", "error");
             }
         }
 
@@ -756,7 +385,9 @@
             try {
                 const res = await fetch("/api/referrals");
                 if (res.ok) {
-                    allReferrals = await res.json();
+                    const hubReferrals = await res.json();
+                    const vault = ZCMC.getVault();
+                    allReferrals = vault.concat(hubReferrals);
                     renderReferrals(allReferrals);
                     updateKpis(allReferrals);
                 }
@@ -765,17 +396,26 @@
             }
         }
 
-        function updateKpis(records) {
-            document.getElementById("kpiTotal").innerText = records.length;
-            document.getElementById("mobileQueueBadge").innerText = records.length;
-            const statCount = records.filter(r => r.urgency === 'stat').length;
-            document.getElementById("kpiStat").innerText = statCount;
-            const transitCount = records.filter(r => r.transit_status === 'in_maritime_transit').length;
-            document.getElementById("kpiTransit").innerText = transitCount;
-            
-            const badge = document.getElementById("bottomNavQueueBadge");
-            if (badge) badge.classList.toggle("hidden", records.length === 0);
-            updateVaultBadges();
+        function renderLocalPipeline() {
+            const vault = ZCMC.getVault();
+            allReferrals = vault.concat(allReferrals.filter(r => !r.is_encrypted));
+            renderReferrals(allReferrals);
+            updateKpis(allReferrals);
+        }
+
+        function updateKpis(data) {
+            const total = data.length;
+            const stat = data.filter(r => r.urgency === 'stat').length;
+            const transit = data.filter(r => r.transit_status === 'in_maritime_transit').length;
+            const vaultCount = ZCMC.getVault().length;
+
+            document.getElementById("kpiTotal").innerText = total;
+            document.getElementById("kpiStat").innerText = stat;
+            document.getElementById("kpiTransit").innerText = transit;
+            document.getElementById("kpiQueue").innerText = vaultCount;
+
+            const mobileBadge = document.getElementById("mobileQueueBadge");
+            if (mobileBadge) mobileBadge.innerText = total;
         }
 
         function setFilter(filter) {
@@ -791,102 +431,89 @@
         }
 
         function filterReferrals() {
-            const query = (document.getElementById("searchInput").value || "").toLowerCase();
-            const filtered = allReferrals.filter(r => {
-                const name = r.patient_name || r.masked_patient || "";
-                const matchesQuery = name.toLowerCase().includes(query) ||
-                                     r.id.toLowerCase().includes(query) ||
-                                     r.origin_facility.toLowerCase().includes(query) ||
-                                     (r.primary_diagnosis && r.primary_diagnosis.toLowerCase().includes(query));
-                
-                if (!matchesQuery) return false;
-                if (activeFilter === 'all') return true;
-                if (activeFilter === 'stat') return r.urgency === 'stat';
-                if (activeFilter === 'in_maritime_transit') return r.transit_status === 'in_maritime_transit';
-                if (activeFilter === 'arrived_port') return r.transit_status === 'arrived_port';
-                return true;
-            });
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            let filtered = allReferrals;
+
+            if (activeFilter === 'stat') filtered = filtered.filter(r => r.urgency === 'stat');
+            else if (activeFilter === 'in_maritime_transit') filtered = filtered.filter(r => r.transit_status === 'in_maritime_transit');
+            else if (activeFilter === 'arrived_port') filtered = filtered.filter(r => r.transit_status === 'arrived_port');
+
+            if (search) {
+                filtered = filtered.filter(r => 
+                    (r.patient_name && r.patient_name.toLowerCase().includes(search)) ||
+                    (r.id && r.id.toLowerCase().includes(search)) ||
+                    (r.origin_facility && r.origin_facility.toLowerCase().includes(search)) ||
+                    (r.primary_diagnosis && r.primary_diagnosis.toLowerCase().includes(search))
+                );
+            }
             renderReferrals(filtered);
         }
 
-        function renderReferrals(records) {
+        function renderReferrals(referrals) {
             const container = document.getElementById("referralsContainer");
             container.innerHTML = "";
 
-            if (!records || records.length === 0) {
+            if (!referrals || referrals.length === 0) {
                 container.innerHTML = `
-                    <div class="p-6 text-center bg-white border border-dashed border-slate-300 rounded-xl">
+                    <div class="p-8 text-center bg-white border border-dashed border-slate-300 rounded-xl">
                         <svg class="w-8 h-8 mx-auto text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        <p class="text-xs font-bold text-slate-600">No active referrals recorded</p>
+                        <p class="text-xs font-bold text-slate-700">No referrals found</p>
                     </div>
                 `;
                 return;
             }
 
-            records.forEach(r => {
-                const isStat = r.urgency === 'stat';
-                const isAsap = r.urgency === 'asap';
-                const isUrgent = r.urgency === 'urgent';
-                const isVaultSealed = Boolean(r.ciphertext);
-                
-                let urgencyBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">ROUTINE</span>`;
-                if (isStat) {
-                    urgencyBadge = `<span class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-300 animate-pulse">STAT</span>`;
-                } else if (isAsap) {
-                    urgencyBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300">ASAP</span>`;
-                } else if (isUrgent) {
-                    urgencyBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">URGENT</span>`;
-                }
-
-                const stages = ['pending_transit', 'in_maritime_transit', 'arrived_port', 'admitted_zcmc'];
-                const currentStageIdx = stages.indexOf(r.transit_status);
-
+            referrals.forEach(r => {
                 const card = document.createElement("div");
-                card.className = "bg-white border border-zcmc-border rounded-xl p-3.5 sm:p-4 shadow-xs space-y-2.5";
-                
+                card.className = "bg-zcmc-surface border border-zcmc-border rounded-xl p-3.5 shadow-xs space-y-2.5 transition hover:border-zcmc-emerald";
+
+                let urgencyBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 uppercase">Routine</span>';
+                if (r.urgency === 'stat') urgencyBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 uppercase border border-rose-300">STAT Critical</span>';
+                else if (r.urgency === 'asap') urgencyBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 uppercase border border-amber-300">ASAP 2-4h</span>';
+                else if (r.urgency === 'urgent') urgencyBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 uppercase border border-blue-300">Urgent 24h</span>';
+
+                let transitPill = '<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700">1. Departure Pending</span>';
+                if (r.transit_status === 'in_maritime_transit') transitPill = '<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">2. In Sea Transit</span>';
+                else if (r.transit_status === 'arrived_port') transitPill = '<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">3. Arrived at Port</span>';
+                else if (r.transit_status === 'admitted_zcmc') transitPill = '<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">4. Admitted ZCMC</span>';
+
+                const encryptedPill = r.is_encrypted 
+                    ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">AES-256 VAULT</span>' 
+                    : '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">FHIR R4 HUB</span>';
+
+                const patientDisplay = r.is_encrypted ? r.masked_patient : (r.patient_name || "Unknown Patient");
+
                 card.innerHTML = `
-                    <div class="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono font-bold text-xs text-zcmc-forest">${r.id}</span>
+                            ${encryptedPill}
+                        </div>
                         <div class="flex items-center gap-1.5">
-                            <span class="font-mono font-bold text-zcmc-forest text-[11px]">${r.id}</span>
                             ${urgencyBadge}
-                            ${isVaultSealed ? `<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">VAULT</span>` : ''}
+                            ${transitPill}
                         </div>
-                        <span class="text-[11px] font-semibold text-slate-600 truncate max-w-[140px] sm:max-w-none">
-                            ${r.origin_facility}
-                        </span>
                     </div>
 
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <h3 class="text-sm font-bold text-zcmc-textMain font-heading">
-                                ${r.patient_name || r.masked_patient}
-                            </h3>
-                            <p class="text-xs text-slate-600 mt-0.5">
-                                <span class="font-bold text-slate-700">Dx:</span> ${r.primary_diagnosis}
-                            </p>
+                    <div class="space-y-1 text-xs">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-sm text-zcmc-textMain">${patientDisplay}</h4>
+                            <span class="text-[10px] text-slate-500">${r.philhealth_id ? 'PhilHealth: ' + r.philhealth_id : ''}</span>
                         </div>
-                        <button onclick="${isVaultSealed ? 'openVaultModal()' : `viewFhir('${r.id}')`}" 
-                                class="flex-shrink-0 px-2 py-1 text-[10px] font-bold rounded bg-slate-100 text-slate-700 border border-slate-200 touch-action">
-                            ${isVaultSealed ? 'Inspect' : 'FHIR'}
+                        <p class="text-xs text-slate-600 line-clamp-1"><strong class="text-slate-800">Diagnosis:</strong> ${r.primary_diagnosis}</p>
+                        <p class="text-[11px] text-slate-500 line-clamp-1"><strong class="text-slate-700">Origin:</strong> ${r.origin_facility}</p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                        <button onclick="viewFhir('${r.id}')" class="text-[11px] font-bold text-zcmc-emerald hover:underline flex items-center gap-1">
+                            <span>FHIR Resource</span>
+                            &rarr;
                         </button>
-                    </div>
 
-                    <!-- Compact Mobile Stepper -->
-                    <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[10px]">
-                        <div class="flex items-center gap-1 text-slate-500 font-semibold">
-                            <span class="${currentStageIdx >= 0 ? 'text-zcmc-forest font-bold' : ''}">1. Island</span>
-                            <span>&rarr;</span>
-                            <span class="${currentStageIdx >= 1 ? 'text-blue-700 font-bold' : ''}">2. Sea</span>
-                            <span>&rarr;</span>
-                            <span class="${currentStageIdx >= 2 ? 'text-amber-700 font-bold' : ''}">3. Port</span>
-                            <span>&rarr;</span>
-                            <span class="${currentStageIdx >= 3 ? 'text-emerald-700 font-bold' : ''}">4. ZCMC</span>
-                        </div>
-
-                        <select onchange="updateReferralTransit('${r.id}', this.value)" class="text-[11px] min-h-[32px] bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-800 font-semibold focus:outline-none">
-                            <option value="pending_transit" ${r.transit_status === 'pending_transit' ? 'selected' : ''}>1. Island</option>
+                        <select onchange="updateReferralTransit('${r.id}', this.value)" class="text-xs bg-slate-50 border border-slate-300 rounded-md px-2 py-1 font-semibold text-slate-700 focus:outline-none">
+                            <option value="pending_transit" ${r.transit_status === 'pending_transit' ? 'selected' : ''}>1. Departure</option>
                             <option value="in_maritime_transit" ${r.transit_status === 'in_maritime_transit' ? 'selected' : ''}>2. Sea</option>
                             <option value="arrived_port" ${r.transit_status === 'arrived_port' ? 'selected' : ''}>3. Port</option>
                             <option value="admitted_zcmc" ${r.transit_status === 'admitted_zcmc' ? 'selected' : ''}>4. ZCMC</option>
@@ -911,10 +538,10 @@
                 primary_diagnosis: target.primary_diagnosis,
                 transit_status: newStatus,
                 clinical_notes: target.clinical_notes || "",
-                client_id: "mobile-edge-terminal"
+                client_id: "edge-terminal"
             };
 
-            if (isEffectiveOnline()) {
+            if (ZCMC.isEffectiveOnline()) {
                 try {
                     const res = await fetch("/api/referrals", {
                         method: "POST",
@@ -922,7 +549,7 @@
                         body: JSON.stringify(updatedData)
                     });
                     if (res.ok) {
-                        showToast(`Status updated to ${newStatus.replace(/_/g, ' ')}.`, "success");
+                        ZCMC.showToast(`Transit status updated to ${newStatus.replace(/_/g, ' ')}.`, "success");
                         fetchReferrals();
                         return;
                     }
@@ -932,11 +559,11 @@
             }
 
             target.transit_status = newStatus;
-            const encrypted = await encryptReferralPayload(updatedData);
-            const vault = getEncryptedVault();
+            const encrypted = await ZCMC.encryptPayload(updatedData);
+            const vault = ZCMC.getVault();
             vault.unshift(encrypted);
-            saveEncryptedVault(vault);
-            showToast(`Offline status update sealed in vault.`, "success");
+            ZCMC.saveVault(vault);
+            ZCMC.showToast(`Offline status update sealed in vault.`, "success");
             renderReferrals(allReferrals);
             updateKpis(allReferrals);
         }
@@ -985,58 +612,6 @@
             });
         }
 
-        function openVaultModal() {
-            const vault = getEncryptedVault();
-            const container = document.getElementById("vaultContentContainer");
-            container.innerHTML = "";
-
-            if (vault.length === 0) {
-                container.innerHTML = `
-                    <div class="p-6 text-center bg-white border border-dashed border-slate-300 rounded-xl">
-                        <svg class="w-8 h-8 mx-auto text-emerald-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                        </svg>
-                        <p class="text-xs font-bold text-slate-700">Encrypted Vault Empty</p>
-                        <p class="text-[10px] text-slate-500 mt-0.5">All offline referrals are synchronized.</p>
-                    </div>
-                `;
-            } else {
-                vault.forEach((env) => {
-                    const row = document.createElement("div");
-                    row.className = "bg-white p-3 rounded-xl border border-slate-300 shadow-xs space-y-1.5 text-xs";
-                    row.innerHTML = `
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                            <span class="font-mono font-bold text-zcmc-forest">${env.id}</span>
-                            <span class="font-bold text-[9px] text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-300">AES-256 SEALED</span>
-                        </div>
-                        <div class="font-mono text-[10px] bg-slate-900 text-emerald-400 p-2 rounded break-all select-all max-h-16 overflow-y-auto">
-                            ${env.ciphertext}
-                        </div>
-                        <div class="text-[10px] text-slate-500">
-                            IV: <span class="font-mono">${env.iv}</span> &bull; ${env.origin_facility}
-                        </div>
-                    `;
-                    container.appendChild(row);
-                });
-            }
-
-            document.getElementById("vaultModal").classList.remove("hidden");
-            document.getElementById("vaultModal").classList.add("flex");
-        }
-
-        function closeVaultModal() {
-            document.getElementById("vaultModal").classList.add("hidden");
-            document.getElementById("vaultModal").classList.remove("flex");
-        }
-
-        function renderLocalPipeline() {
-            const vault = getEncryptedVault();
-            allReferrals = vault.concat(allReferrals);
-            renderReferrals(allReferrals);
-            updateKpis(allReferrals);
-        }
-
-        updateVaultBadges();
         fetchReferrals();
     </script>
 </body>

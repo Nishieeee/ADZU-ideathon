@@ -1,0 +1,71 @@
+/* ZCMC Regional Health Exchange Component Stylesheet */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+:root {
+    --zcmc-forest: #064E3B;
+    --zcmc-emerald: #087A55;
+    --zcmc-mint: #70B89B;
+    --zcmc-ivory: #F7F5EC;
+    --zcmc-gold: #C8A64D;
+    --zcmc-antiquegold: #9C7A2F;
+    --zcmc-surface: #FFFFFF;
+    --zcmc-border: #E2E8F0;
+    --zcmc-text-main: #0F172A;
+    --zcmc-text-muted: #64748B;
+}
+
+body {
+    font-family: 'Source Sans 3', sans-serif;
+    background-color: var(--zcmc-ivory);
+    color: var(--zcmc-text-main);
+    -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3, h4, .font-heading {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.font-formal {
+    font-family: 'Libre Baskerville', serif;
+}
+
+/* Touch feedback for mobile */
+.touch-action:active {
+    transform: scale(0.97);
+}
+
+/* Safe area bottom padding for mobile navbar */
+.pb-safe {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+    .pb-safe {
+        padding-bottom: 1.5rem;
+    }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* Subtle radar pulse animation */
+@keyframes radar-pulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.08); opacity: 0.3; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+}
+.radar-beacon {
+    animation: radar-pulse 3s infinite ease-in-out;
+}
