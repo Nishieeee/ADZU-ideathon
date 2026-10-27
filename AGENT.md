@@ -7,6 +7,7 @@
 
 ## 2. Architecture & Conventions
 - **Tier 3 Vault Specification:** [[projects/side-projects/ADZU-ideathon.md]]
+- **Official Specifications:** [DOCUMENTATION.md](file:///C:/Users/ay/Projects/ADZU-ideathon/DOCUMENTATION.md) and [IMPLEMENTATION_PLAN.md](file:///C:/Users/ay/Projects/ADZU-ideathon/IMPLEMENTATION_PLAN.md)
 - **Code Standards:** 
   - FastAPI gateway + SQLite persistence in `AdZU_Ideathon/`
   - HL7 FHIR R4 ServiceRequest standard for referral payloads
