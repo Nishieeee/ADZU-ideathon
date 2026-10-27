@@ -1,11 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZCMC Unified Health Exchange MVP - Interactive Map Geofence & Gmail Alerts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#064E3B">
+    <title>ZCMC Unified Health Exchange | Geofence &amp; Maritime Triage MVP</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Official ZCMC Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet CSS & JS for OpenStreetMap Interactive Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -15,385 +20,626 @@
                 extend: {
                     colors: {
                         zcmc: {
-                            forest: '#004225',
-                            emerald: '#0B6623',
-                            gold: '#D4AF37',
-                            sand: '#F7F4EB',
+                            forest: '#064E3B',
+                            emerald: '#087A55',
+                            mint: '#70B89B',
+                            ivory: '#F7F5EC',
+                            gold: '#C8A64D',
+                            antiquegold: '#9C7A2F',
                             surface: '#FFFFFF',
                             border: '#E2E8F0',
-                            textMain: '#1A2E26',
-                            textMuted: '#5C7168'
+                            textMain: '#0F172A',
+                            textMuted: '#64748B'
                         }
                     },
                     fontFamily: {
-                        sans: ['"Source Sans 3"', 'sans-serif'],
-                        heading: ['Montserrat', 'sans-serif']
+                        heading: ['Montserrat', 'sans-serif'],
+                        body: ['Source Sans 3', 'sans-serif'],
+                        formal: ['Libre Baskerville', 'serif']
                     }
                 }
             }
         }
     </script>
     <style>
+        body { 
+            font-family: 'Source Sans 3', sans-serif; 
+            background-color: #F7F5EC; 
+            color: #0F172A;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3, h4, .font-heading { font-family: 'Montserrat', sans-serif; }
+        .font-formal { font-family: 'Libre Baskerville', serif; }
+        .touch-action:active { transform: scale(0.97); }
+        .pb-safe { padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px)); }
+        @media (min-width: 768px) {
+            .pb-safe { padding-bottom: 2rem; }
+        }
         .leaflet-container {
             font-family: 'Source Sans 3', sans-serif;
             border-radius: 0.75rem;
             z-index: 10;
         }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-zcmc-sand text-zcmc-textMain font-sans min-h-screen flex flex-col">
+<body class="min-h-screen antialiased bg-zcmc-ivory text-zcmc-textMain">
 
-    <!-- Top Navigation Header -->
-    <header class="bg-zcmc-forest text-white border-b-2 border-zcmc-gold px-4 py-3 sticky top-0 z-50 shadow-md">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-zcmc-gold flex items-center justify-center font-heading font-black text-zcmc-forest text-xl shadow-inner">
-                    Z
-                </div>
-                <div>
-                    <h1 class="font-heading font-extrabold text-sm sm:text-base tracking-wide text-white flex items-center gap-2">
-                        ZCMC Regional Health Exchange <span class="text-[10px] bg-zcmc-gold text-zcmc-forest font-bold px-1.5 py-0.5 rounded">GEOFENCE MVP</span>
-                    </h1>
-                    <p class="text-[11px] text-emerald-200">Interactive Map Geofencing &bull; Gmail Alerts (axrcopu@gmail.com) &bull; Multi-Branch Shared Data</p>
-                </div>
-            </div>
-
-            <!-- Role / View Switcher -->
-            <div class="flex items-center gap-1.5 bg-black/30 p-1 rounded-xl border border-white/10 text-xs font-semibold">
-                <button id="tabBtnPatient" onclick="switchView('patient')" class="px-3 py-1.5 rounded-lg bg-zcmc-gold text-zcmc-forest font-bold shadow-xs transition">
-                    1. Patient Intake & Active Ticket
-                </button>
-                <button id="tabBtnAdmin" onclick="switchView('admin')" class="px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition">
-                    2. Branch Admin Dashboard
-                </button>
-                <button id="tabBtnEmail" onclick="switchView('email')" class="px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition flex items-center gap-1">
-                    <span>3. Gmail Notification Log</span>
-                    <span id="emailBadge" class="bg-rose-500 text-white text-[10px] px-1.5 rounded-full font-bold">0</span>
-                </button>
-                <button onclick="openBranchWindow()" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-bold transition flex items-center gap-1.5 shadow-xs">
-                    <span>🏥 Launch Branch Window</span>
-                    <svg class="w-3.5 h-3.5 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto p-4 sm:p-6 flex-grow w-full">
-
-        <!-- ========================================== -->
-        <!-- VIEW 1: PATIENT INTAKE & TICKET -->
-        <!-- ========================================== -->
-        <section id="viewPatient" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- Left: Intake Form -->
-            <div class="lg:col-span-5 bg-white border border-zcmc-border rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                        <div class="flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <h2 class="font-heading font-bold text-sm uppercase tracking-wide text-zcmc-forest">Patient Pre-Admission Queue</h2>
-                        </div>
-                        <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            HL7 FHIR R4
-                        </span>
-                    </div>
-
-                    <form id="patientQueueForm" onsubmit="handlePatientQueue(event)" class="space-y-3.5">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name *</label>
-                                <input type="text" id="pName" required value="Fatima S. Alih" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">PhilHealth PIN</label>
-                                <input type="text" id="pPhilhealth" value="12-345678901-2" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Notification Email *</label>
-                                <input type="email" id="pEmail" required value="axrcopu@gmail.com" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Origin Location *</label>
-                                <select id="pOriginSelect" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
-                                    <option value="Basilan Island" data-lat="6.7042" data-lon="121.9714">Basilan Island (Isabela / Lamitan)</option>
-                                    <option value="Sulu Province" data-lat="6.0536" data-lon="121.0028">Sulu Archipelago (Jolo)</option>
-                                    <option value="Tawi-Tawi" data-lat="5.0289" data-lon="119.7731">Tawi-Tawi (Bongao)</option>
-                                    <option value="Vitali Mountain" data-lat="7.3325" data-lon="122.2891">Vitali Highlands (Mountain Corridor)</option>
-                                    <option value="Zamboanga Urban" data-lat="6.9214" data-lon="122.0790">Zamboanga City Proper</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Chief Complaint *</label>
-                            <input type="text" id="pComplaint" required value="Acute severe lower right abdominal pain with peritonitis, suspected appendicitis" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Self-Reported Allergies (AI Risk Check)</label>
-                            <input type="text" id="pAllergies" value="Severe Penicillin and Amoxicillin anaphylaxis" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-zcmc-emerald outline-none">
-                        </div>
-
-                        <button type="submit" class="w-full py-3 bg-zcmc-forest hover:bg-zcmc-emerald text-white font-heading font-bold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2">
-                            <span>ISSUE QUEUE TICKET & EVALUATE ROUTING</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Right: Interactive Patient Ticket & AI Telemetry -->
-            <div class="lg:col-span-7 space-y-4">
-                <!-- Active Clickable Ticket Banner -->
-                <div id="activeTicketWrapper">
-                    <div id="ticketBanner" class="bg-gradient-to-r from-zcmc-forest to-emerald-900 text-white rounded-2xl p-5 shadow-lg border-2 border-zcmc-gold/60 transition">
-                        <div class="flex items-center justify-between pb-3 border-b border-white/20">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-3 h-3 rounded-full bg-zcmc-gold animate-ping"></span>
-                                <span class="font-heading font-bold text-xs uppercase tracking-wider text-zcmc-gold">Interactive Patient Referral Ticket</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button onclick="openMapModal()" class="text-[11px] font-semibold bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded text-white flex items-center gap-1 transition">
-                                    <span>📍 Open Map Simulator</span>
-                                </button>
-                                <button onclick="openCompleteModal(event)" class="text-[11px] font-extrabold bg-zcmc-gold hover:bg-amber-400 text-zcmc-forest px-3 py-1 rounded-lg shadow transition flex items-center gap-1">
-                                    <span>✓ Mark As Done</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div onclick="openMapModal()" class="cursor-pointer mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                            <div>
-                                <span class="text-white/60 block text-[10px] uppercase">Ticket Ref ID</span>
-                                <span id="ticketIdDisplay" class="font-mono font-bold text-sm text-zcmc-gold">ZCMC-MVP-1001</span>
-                            </div>
-                            <div>
-                                <span class="text-white/60 block text-[10px] uppercase">Patient Name</span>
-                                <span id="ticketNameDisplay" class="font-bold text-sm text-white">Fatima S. Alih</span>
-                            </div>
-                            <div>
-                                <span class="text-white/60 block text-[10px] uppercase">Assigned Facility</span>
-                                <span id="ticketDestDisplay" class="font-bold text-amber-200">Unassigned (Awaiting Admission)</span>
-                            </div>
-                            <div>
-                                <span class="text-white/60 block text-[10px] uppercase">Transit Status</span>
-                                <span id="ticketStatusDisplay" class="font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5">
-                                    Pending Departure
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-white/80">
-                            <span>Pre-defined Location Point: <strong id="ticketTargetDisplay" class="text-white">Port Pier 1 Slipway (Zamboanga)</strong></span>
-                            <span onclick="openMapModal()" class="text-emerald-300 font-semibold underline cursor-pointer">Click to Test 100m Geofence &rarr;</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Ticket Completed Notice (Hidden until finished) -->
-                <div id="ticketCompletedNotice" class="hidden bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-5 text-emerald-950 shadow-xs flex items-center justify-between">
+    <div class="flex min-h-screen">
+        
+        <!-- ======================================================== -->
+        <!-- DESKTOP INSTITUTIONAL SIDEBAR (Visible on md: and up)    -->
+        <!-- ======================================================== -->
+        <aside class="hidden md:flex flex-col w-64 bg-zcmc-forest text-white border-r-2 border-zcmc-gold/60 h-screen sticky top-0 flex-shrink-0 z-30 justify-between shadow-xl">
+            <div class="flex flex-col">
+                <!-- Brand Seal & Motto -->
+                <div class="p-5 border-b border-white/10 flex flex-col gap-2.5">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-lg">
-                            ✓
+                        <div class="relative w-9 h-9 flex-shrink-0 flex items-center justify-center bg-zcmc-forest rounded-lg border border-zcmc-mint/40 shadow-xs">
+                            <div class="absolute w-6 h-6 border border-zcmc-gold rounded translate-x-0.5 translate-y-0.5 opacity-90"></div>
+                            <div class="relative w-6 h-6 bg-zcmc-emerald border border-zcmc-mint rounded flex items-center justify-center text-white font-bold text-xs">
+                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 10.5h-5.5V5a1.5 1.5 0 0 0-3 0v5.5H5a1.5 1.5 0 0 0 0 3h5.5V19a1.5 1.5 0 0 0 3 0v-5.5H19a1.5 1.5 0 0 0 0-3z"/>
+                                </svg>
+                            </div>
                         </div>
                         <div>
-                            <h4 class="font-heading font-bold text-sm text-emerald-900">Active Ticket Completed & Admitted</h4>
-                            <p class="text-xs text-emerald-700" id="completedNoticeDetail">Patient has been received at the selected operating branch. Ticket removed from active intake queue.</p>
-                        </div>
-                    </div>
-                    <button onclick="createNewTicket()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition shadow-xs">
-                        + Queue New Patient
-                    </button>
-                </div>
-
-                <!-- AI Routing Telemetry Card -->
-                <div id="aiTelemetryCard" class="bg-white border border-zcmc-border rounded-2xl p-5 shadow-xs">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-                        <h3 class="font-heading font-bold text-sm uppercase tracking-wide text-zcmc-forest flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-zcmc-gold"></span>
-                            AI Clinical Routing Telemetry
-                        </h3>
-                        <span id="aiAcuityBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">
-                            Acuity: STAT
-                        </span>
-                    </div>
-
-                    <!-- Allergy Warning Box -->
-                    <div id="aiAllergyBox" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 font-semibold mb-4">
-                        CRITICAL ALLERGY ALERT (Severe Penicillin/Amoxicillin): Patient requires facility with emergency airway & ICU backup.
-                    </div>
-
-                    <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Recommended Healthcare Facilities</h4>
-                    <div id="aiRecList" class="space-y-2 text-xs">
-                        <div class="p-3 border border-slate-200 rounded-xl bg-white flex justify-between items-center">
-                            <div>
-                                <div class="font-bold text-slate-800">Zamboanga City Medical Center (ZCMC)</div>
-                                <div class="text-[11px] text-slate-500">Zamboanga City &bull; Level 3 Tertiary Apex &bull; Surgical & ICU Ready &bull; Beds: 45</div>
-                            </div>
-                            <span class="text-[10px] font-bold px-2 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                CAN ACCOMMODATE
+                            <h1 class="text-sm font-extrabold tracking-wide font-heading">ZCMC HEALTH</h1>
+                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-zcmc-gold/20 text-zcmc-gold border border-zcmc-gold/40 uppercase">
+                                GEOFENCE MVP
                             </span>
                         </div>
                     </div>
+                    <p class="text-[10px] text-zcmc-mint font-formal italic leading-tight">
+                        Care &bull; Commitment &bull; Compassion
+                    </p>
+                    <div class="text-[10px] text-slate-300 bg-white/5 px-2.5 py-1.5 rounded-md border border-white/10 flex items-center justify-between">
+                        <span>100m Geofence</span>
+                        <span class="font-bold text-emerald-400 font-mono">ACTIVE</span>
+                    </div>
                 </div>
 
-                <!-- Recent Gmail Notification Preview -->
-                <div class="bg-slate-900 text-white border border-slate-800 rounded-2xl p-4 shadow-md">
-                    <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
-                        <span class="font-bold uppercase tracking-wider text-zcmc-gold flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 text-rose-400" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                            Latest Gmail Dispatched (axrcopu@gmail.com)
-                        </span>
-                        <span id="lblEmailTime" class="text-[10px] text-slate-400">Ready</span>
+                <!-- Navigation Menu -->
+                <nav class="p-3.5 space-y-1.5 flex-grow">
+                    <!-- Tab 1: Patient Intake -->
+                    <button id="tabBtnPatient" onclick="switchView('patient')" 
+                            class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition bg-zcmc-emerald text-white border border-zcmc-gold/40 shadow-xs text-left touch-action">
+                        <svg class="w-4 h-4 text-zcmc-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span>1. Patient Intake &amp; Ticket</span>
+                    </button>
+
+                    <!-- Tab 2: Branch Admin -->
+                    <button id="tabBtnAdmin" onclick="switchView('admin')" 
+                            class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white hover:bg-white/10 text-left touch-action">
+                        <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <span>2. Branch Admin Queue</span>
+                    </button>
+
+                    <!-- Tab 3: Gmail Audit Feed -->
+                    <button id="tabBtnEmail" onclick="switchView('email')" 
+                            class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white hover:bg-white/10 text-left touch-action">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                            <span>3. Gmail Audit Feed</span>
+                        </div>
+                        <span id="emailBadge" class="bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+                    </button>
+
+                    <!-- Action: Map Modal Trigger -->
+                    <button onclick="openMapModal()" 
+                            class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-zcmc-gold bg-zcmc-gold/15 border border-zcmc-gold/40 shadow-xs hover:bg-zcmc-gold/25 text-left touch-action">
+                        <svg class="w-4 h-4 text-zcmc-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span>Interactive Map Simulator</span>
+                    </button>
+
+                    <!-- Action: Launch Branch Window -->
+                    <button onclick="openBranchWindow()" 
+                            class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white hover:bg-white/10 text-left touch-action">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            <span>Branch Terminal</span>
+                        </div>
+                        <span class="text-[10px] text-zcmc-gold uppercase font-bold">&rarr;</span>
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="pt-2 border-t border-white/10">
+                        <span class="text-[9px] uppercase font-bold tracking-wider text-slate-400 px-3.5 mb-1.5 block">Other Portals</span>
+                        <a href="/" class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <span>Referral Triage &amp; Vault</span>
+                        </a>
+                        <a href="/dock.html" class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+                            <span>Sea Corridor Radar</span>
+                        </a>
+                        <a href="/analytics.html" class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            <span>Regional Analytics</span>
+                        </a>
                     </div>
-                    <div id="emailPreviewBox" class="bg-slate-800 p-3 rounded-xl font-mono text-xs text-emerald-300 border border-slate-700 min-h-[50px]">
-                        [No email triggered yet. Open map and select a location point near or away from target.]
-                    </div>
+                </nav>
+            </div>
+
+            <!-- Sidebar Bottom Status Panel -->
+            <div class="p-4 border-t border-white/10 bg-black/15 space-y-2">
+                <div class="text-[11px] text-slate-400">
+                    <span class="block text-[10px] uppercase font-bold text-slate-500">Target Geofence:</span>
+                    <strong class="text-white truncate block">Port Pier 1 Slipway</strong>
+                </div>
+                <div class="text-[11px] text-slate-400">
+                    <span class="block text-[10px] uppercase font-bold text-slate-500">Gmail Alert To:</span>
+                    <strong class="text-zcmc-gold font-mono truncate block">axrcopu@gmail.com</strong>
                 </div>
             </div>
-        </section>
+        </aside>
 
-        <!-- ========================================== -->
-        <!-- VIEW 2: BRANCH ADMIN DASHBOARD -->
-        <!-- ========================================== -->
-        <section id="viewAdmin" class="hidden space-y-5">
-            <div class="bg-white border border-zcmc-border rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-zcmc-forest text-zcmc-gold flex items-center justify-center font-bold text-sm">
-                        HQ
+        <!-- ======================================================== -->
+        <!-- MAIN CONTENT AREA                                        -->
+        <!-- ======================================================== -->
+        <div class="flex-1 flex flex-col min-w-0 pb-safe">
+            
+            <!-- Mobile Sticky App Header (<md screens) -->
+            <header class="md:hidden bg-zcmc-forest text-white border-b-2 border-zcmc-gold px-4 py-2.5 sticky top-0 z-40 shadow-md">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="relative w-8 h-8 flex-shrink-0 flex items-center justify-center bg-zcmc-forest rounded-md border border-zcmc-mint/40 shadow-xs">
+                            <div class="absolute w-5 h-5 border border-zcmc-gold rounded-xs translate-x-0.5 translate-y-0.5 opacity-90"></div>
+                            <div class="relative w-5 h-5 bg-zcmc-emerald border border-zcmc-mint rounded-xs flex items-center justify-center text-white font-bold text-xs">
+                                <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 10.5h-5.5V5a1.5 1.5 0 0 0-3 0v5.5H5a1.5 1.5 0 0 0 0 3h5.5V19a1.5 1.5 0 0 0 3 0v-5.5H19a1.5 1.5 0 0 0 0-3z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <h1 class="font-heading font-extrabold text-xs sm:text-sm text-white truncate">ZCMC HEALTH</h1>
+                                <span class="text-[8px] bg-zcmc-gold text-zcmc-forest font-bold px-1 py-0.2 rounded uppercase">MVP</span>
+                            </div>
+                            <p class="text-[9px] text-zcmc-mint font-formal italic truncate">100m Geofence &bull; axrcopu@gmail.com</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="font-heading font-bold text-sm text-zcmc-forest">Active Workstation Branch Identity</h2>
-                        <p class="text-xs text-slate-500">Notice the distance column in the queue updates dynamically based on the selected operating branch</p>
-                    </div>
-                </div>
 
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-bold text-slate-700">Operating Branch:</label>
-                    <select id="adminBranchSelect" onchange="refreshBranchView()" class="text-xs font-semibold border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-zcmc-emerald outline-none">
-                        <!-- Populated dynamically -->
-                    </select>
-                </div>
-            </div>
-
-            <div class="bg-white border border-zcmc-border rounded-2xl p-5 shadow-xs">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                    <div>
-                        <h3 class="font-heading font-bold text-sm uppercase tracking-wide text-zcmc-forest">
-                            Shared Inter-Branch Patient Queue
-                        </h3>
-                        <p class="text-xs text-slate-500">Shared records synchronized across regional branches and ZCMC Apex</p>
-                    </div>
-                    <button onclick="refreshBranchView()" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition">
-                        Refresh Queue
+                    <button onclick="openBranchWindow()" class="px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs border border-white/20 touch-action">
+                        <svg class="w-3 h-3 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <span>Branch</span>
                     </button>
                 </div>
+            </header>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-600 border-b border-slate-200">
-                                <th class="p-3 font-bold">Referral ID</th>
-                                <th class="p-3 font-bold">Patient Name</th>
-                                <th class="p-3 font-bold">Origin</th>
-                                <th class="p-3 font-bold">Diagnosis</th>
-                                <th class="p-3 font-bold">Transit Status</th>
-                                <th class="p-3 font-bold text-emerald-800">Distance From THIS Branch</th>
-                                <th class="p-3 font-bold">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="branchTableBody" class="divide-y divide-slate-100">
+            <!-- Mobile Top Segmented Controller (<md screens) -->
+            <div class="md:hidden max-w-md mx-auto w-full px-4 pt-2.5 pb-1">
+                <div class="bg-slate-200/90 p-1 rounded-xl flex items-center text-xs font-bold text-slate-700 border border-slate-300/50">
+                    <button id="mobileSegBtnPatient" onclick="switchView('patient')" 
+                            class="flex-1 py-1.5 rounded-lg bg-zcmc-forest text-white shadow-xs transition touch-action flex items-center justify-center gap-1">
+                        <span>Intake &amp; Ticket</span>
+                    </button>
+                    <button id="mobileSegBtnAdmin" onclick="switchView('admin')" 
+                            class="flex-1 py-1.5 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1">
+                        <span>Branch Admin</span>
+                    </button>
+                    <button id="mobileSegBtnEmail" onclick="switchView('email')" 
+                            class="flex-1 py-1.5 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1">
+                        <span>Gmail</span>
+                        <span id="mobileEmailBadge" class="bg-rose-500 text-white text-[9px] px-1 rounded-full font-bold">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Workspace Container -->
+            <main class="max-w-7xl mx-auto p-4 sm:p-6 flex-grow w-full">
+
+                <!-- ========================================== -->
+                <!-- VIEW 1: PATIENT INTAKE & ACTIVE TICKET -->
+                <!-- ========================================== -->
+                <section id="viewPatient" class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+                    
+                    <!-- Left: Pre-Admission Intake Form -->
+                    <div class="lg:col-span-5 bg-zcmc-surface border border-zcmc-border rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <h2 class="font-heading font-bold text-xs sm:text-sm uppercase tracking-wide text-zcmc-forest">
+                                        Patient Pre-Admission Queue
+                                    </h2>
+                                </div>
+                                <span class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                    HL7 FHIR R4
+                                </span>
+                            </div>
+
+                            <form id="patientQueueForm" onsubmit="handlePatientQueue(event)" class="space-y-3.5">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label for="pName" class="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name <span class="text-rose-600">*</span></label>
+                                        <input type="text" id="pName" required value="Fatima S. Alih" 
+                                               class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald outline-none transition">
+                                    </div>
+                                    <div>
+                                        <label for="pPhilhealth" class="block text-xs font-bold text-slate-700 uppercase mb-1">PhilHealth PIN</label>
+                                        <input type="text" id="pPhilhealth" value="12-345678901-2" 
+                                               class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald outline-none transition font-mono">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label for="pEmail" class="block text-xs font-bold text-slate-700 uppercase mb-1">Notification Email <span class="text-rose-600">*</span></label>
+                                        <input type="email" id="pEmail" required value="axrcopu@gmail.com" 
+                                               class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald outline-none transition">
+                                    </div>
+                                    <div>
+                                        <label for="pOriginSelect" class="block text-xs font-bold text-slate-700 uppercase mb-1">Origin Location <span class="text-rose-600">*</span></label>
+                                        <select id="pOriginSelect" 
+                                                class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald outline-none transition font-medium">
+                                            <option value="Basilan Island" data-lat="6.7042" data-lon="121.9714">Basilan Island (Isabela / Lamitan)</option>
+                                            <option value="Sulu Province" data-lat="6.0536" data-lon="121.0028">Sulu Archipelago (Jolo)</option>
+                                            <option value="Tawi-Tawi" data-lat="5.0289" data-lon="119.7731">Tawi-Tawi (Bongao)</option>
+                                            <option value="Vitali Mountain" data-lat="7.3325" data-lon="122.2891">Vitali Highlands (Mountain Corridor)</option>
+                                            <option value="Zamboanga Urban" data-lat="6.9214" data-lon="122.0790">Zamboanga City Proper</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="pComplaint" class="block text-xs font-bold text-slate-700 uppercase mb-1">Chief Complaint <span class="text-rose-600">*</span></label>
+                                    <input type="text" id="pComplaint" required value="Acute severe lower right abdominal pain with peritonitis, suspected appendicitis" 
+                                           class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald outline-none transition">
+                                </div>
+
+                                <div>
+                                    <label for="pAllergies" class="block text-xs font-bold text-slate-700 uppercase mb-1">Self-Reported Allergies (AI Risk Check)</label>
+                                    <input type="text" id="pAllergies" value="Severe Penicillin and Amoxicillin anaphylaxis" 
+                                           class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald outline-none transition text-rose-700 font-medium">
+                                </div>
+
+                                <div class="pt-1">
+                                    <button type="submit" 
+                                            class="w-full min-h-[46px] py-3 bg-zcmc-forest hover:bg-zcmc-emerald active:bg-zcmc-forest text-white font-heading font-bold text-xs sm:text-sm rounded-xl transition shadow-sm border border-zcmc-gold/40 flex items-center justify-center gap-2 touch-action">
+                                        <svg class="w-4 h-4 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                        <span>ISSUE QUEUE TICKET &amp; EVALUATE ROUTING</span>
+                                    </button>
+                                    <p class="text-[10px] text-center text-slate-500 mt-1.5">
+                                        Generates HL7 FHIR ServiceRequest &bull; Autonomous geofencing ready
+                                    </p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right: Interactive Patient Ticket, AI Telemetry & Gmail Preview -->
+                    <div class="lg:col-span-7 space-y-4">
+                        
+                        <!-- Active Clickable Ticket Banner -->
+                        <div id="activeTicketWrapper">
+                            <div id="ticketBanner" class="bg-zcmc-forest text-white rounded-2xl p-4 sm:p-5 shadow-lg border-2 border-zcmc-gold/80 transition relative overflow-hidden">
+                                <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-zcmc-emerald/30 rounded-full blur-xl pointer-events-none"></div>
+
+                                <div class="flex items-center justify-between pb-3 border-b border-white/15 gap-2 relative z-10">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-zcmc-gold animate-ping"></span>
+                                        <span class="font-heading font-bold text-xs uppercase tracking-wider text-zcmc-gold">
+                                            Interactive Patient Referral Ticket
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 sm:gap-2">
+                                        <button onclick="openMapModal()" class="text-[11px] font-semibold bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg text-white flex items-center gap-1 transition border border-white/20 touch-action">
+                                            <svg class="w-3.5 h-3.5 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            <span>Open Map</span>
+                                        </button>
+                                        <button onclick="openCompleteModal(event)" class="text-[11px] font-extrabold bg-zcmc-gold hover:bg-amber-400 text-zcmc-forest px-3 py-1 rounded-lg shadow transition flex items-center gap-1 touch-action">
+                                            <svg class="w-3.5 h-3.5 text-zcmc-forest" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            <span>Mark As Done</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div onclick="openMapModal()" class="cursor-pointer mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs relative z-10">
+                                    <div>
+                                        <span class="text-white/60 block text-[10px] uppercase font-bold">Ticket Ref ID</span>
+                                        <span id="ticketIdDisplay" class="font-mono font-bold text-xs sm:text-sm text-zcmc-gold">ZCMC-MVP-1001</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-white/60 block text-[10px] uppercase font-bold">Patient Name</span>
+                                        <span id="ticketNameDisplay" class="font-bold text-xs sm:text-sm text-white">Fatima S. Alih</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-white/60 block text-[10px] uppercase font-bold">Assigned Facility</span>
+                                        <span id="ticketDestDisplay" class="font-bold text-amber-200">Unassigned (Awaiting Admission)</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-white/60 block text-[10px] uppercase font-bold">Transit Status</span>
+                                        <span id="ticketStatusDisplay" class="font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5">
+                                            Pending Departure
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-white/80 gap-1.5 relative z-10">
+                                    <span>Pre-defined Location Point: <strong id="ticketTargetDisplay" class="text-white">Port Pier 1 Slipway (Zamboanga)</strong></span>
+                                    <span onclick="openMapModal()" class="text-emerald-300 font-semibold underline cursor-pointer hover:text-white flex items-center gap-1">
+                                        <span>Click to Test 100m Geofence</span>
+                                        &rarr;
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ticket Completed Notice (Hidden until finalized) -->
+                        <div id="ticketCompletedNotice" class="hidden bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-4 sm:p-5 text-emerald-950 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-base flex-shrink-0">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-heading font-bold text-xs sm:text-sm text-emerald-900">Active Ticket Completed &amp; Admitted</h4>
+                                    <p class="text-xs text-emerald-700" id="completedNoticeDetail">
+                                        Patient has been received at the selected operating branch. Ticket removed from active intake queue.
+                                    </p>
+                                </div>
+                            </div>
+                            <button onclick="createNewTicket()" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap touch-action">
+                                + Queue New Patient
+                            </button>
+                        </div>
+
+                        <!-- AI Clinical Routing Telemetry Card -->
+                        <div id="aiTelemetryCard" class="bg-zcmc-surface border border-zcmc-border rounded-2xl p-4 sm:p-5 shadow-xs">
+                            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                                <h3 class="font-heading font-bold text-xs sm:text-sm uppercase tracking-wide text-zcmc-forest flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-zcmc-gold"></span>
+                                    <span>AI Clinical Routing Telemetry</span>
+                                </h3>
+                                <span id="aiAcuityBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300">
+                                    Acuity: STAT
+                                </span>
+                            </div>
+
+                            <!-- Allergy Warning Box -->
+                            <div id="aiAllergyBox" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 font-semibold mb-3">
+                                CRITICAL ALLERGY ALERT (Severe Penicillin/Amoxicillin): Patient requires facility with emergency airway &amp; ICU backup.
+                            </div>
+
+                            <h4 class="text-[11px] font-bold uppercase text-slate-500 mb-2">Recommended Healthcare Facilities</h4>
+                            <div id="aiRecList" class="space-y-2 text-xs">
+                                <div class="p-3 border border-slate-200 rounded-xl bg-white flex justify-between items-center">
+                                    <div>
+                                        <div class="font-bold text-slate-800">Zamboanga City Medical Center (ZCMC)</div>
+                                        <div class="text-[11px] text-slate-500">Zamboanga City &bull; Level 3 Tertiary Apex &bull; Surgical &amp; ICU Ready &bull; Beds: 45</div>
+                                    </div>
+                                    <span class="text-[10px] font-bold px-2 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                        CAN ACCOMMODATE
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Gmail Notification Preview -->
+                        <div class="bg-slate-900 text-white border border-slate-800 rounded-2xl p-4 shadow-md">
+                            <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+                                <span class="font-bold uppercase tracking-wider text-zcmc-gold flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-rose-400" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                                    <span>Latest Gmail Dispatched (axrcopu@gmail.com)</span>
+                                </span>
+                                <span id="lblEmailTime" class="text-[10px] text-slate-400 font-mono">Ready</span>
+                            </div>
+                            <div id="emailPreviewBox" class="bg-slate-800/80 p-3 rounded-xl font-mono text-xs text-emerald-300 border border-slate-700 min-h-[50px] leading-relaxed break-words">
+                                [No email triggered yet. Open map and select a location point near or away from target.]
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- ========================================== -->
+                <!-- VIEW 2: BRANCH ADMIN DASHBOARD -->
+                <!-- ========================================== -->
+                <section id="viewAdmin" class="hidden space-y-5">
+                    <div class="bg-zcmc-surface border border-zcmc-border rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-zcmc-forest text-zcmc-gold flex items-center justify-center font-bold text-xs">
+                                HQ
+                            </div>
+                            <div>
+                                <h2 class="font-heading font-bold text-xs sm:text-sm text-zcmc-forest">Active Workstation Branch Identity</h2>
+                                <p class="text-[11px] text-slate-500">Notice the distance column in the queue updates dynamically based on the selected operating branch</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <label for="adminBranchSelect" class="text-xs font-bold text-slate-700 whitespace-nowrap">Operating Branch:</label>
+                            <select id="adminBranchSelect" onchange="refreshBranchView()" 
+                                    class="text-xs font-semibold border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-zcmc-surface border border-zcmc-border rounded-2xl p-4 sm:p-5 shadow-xs">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                            <div>
+                                <h3 class="font-heading font-bold text-xs sm:text-sm uppercase tracking-wide text-zcmc-forest">
+                                    Shared Inter-Branch Patient Queue
+                                </h3>
+                                <p class="text-[11px] text-slate-500">Shared records synchronized across regional branches and ZCMC Apex</p>
+                            </div>
+                            <button onclick="refreshBranchView()" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition touch-action">
+                                Refresh Queue
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-700 border-b border-slate-200 text-[11px] uppercase tracking-wider font-bold">
+                                        <th class="p-3">Referral ID</th>
+                                        <th class="p-3">Patient Name</th>
+                                        <th class="p-3">Origin</th>
+                                        <th class="p-3">Diagnosis</th>
+                                        <th class="p-3">Transit Status</th>
+                                        <th class="p-3 text-emerald-800">Distance From THIS Branch</th>
+                                        <th class="p-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="branchTableBody" class="divide-y divide-slate-100 font-sans">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================== -->
+                <!-- VIEW 3: GMAIL NOTIFICATION LOG -->
+                <!-- ========================================== -->
+                <section id="viewEmail" class="hidden space-y-4">
+                    <!-- Live Gmail SMTP Sender Configuration Card -->
+                    <div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-md border border-slate-800">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                                <h3 class="font-heading font-bold text-xs sm:text-sm text-zcmc-gold uppercase">
+                                    Connect Real Gmail Sender (Optional - For Real Inbox Delivery)
+                                </h3>
+                            </div>
+                            <span class="text-[10px] bg-emerald-950 text-emerald-300 font-mono px-2 py-0.5 rounded border border-emerald-600">
+                                TLS Port 587 Ready
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-300 mb-3">
+                            To receive real emails in <strong class="text-white">axrcopu@gmail.com</strong>, enter a sender Gmail account with a standard Google <strong>16-character App Password</strong> (from Google Account &rarr; Security &rarr; 2-Step Verification &rarr; App Passwords):
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div>
+                                <label for="smtpSenderEmail" class="block text-[11px] text-slate-400 mb-1">Sender Gmail Address</label>
+                                <input type="email" id="smtpSenderEmail" placeholder="e.g., youraccount@gmail.com" 
+                                       class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none focus:border-zcmc-gold">
+                            </div>
+                            <div>
+                                <label for="smtpSenderPassword" class="block text-[11px] text-slate-400 mb-1">16-Char Google App Password</label>
+                                <input type="password" id="smtpSenderPassword" placeholder="e.g., abcd efgh ijkl mnop" 
+                                       class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none focus:border-zcmc-gold font-mono">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="saveAndTestSmtp()" 
+                                        class="w-full py-2 bg-zcmc-gold hover:bg-amber-400 text-zcmc-forest font-heading font-bold rounded-lg shadow transition touch-action">
+                                    Save &amp; Send Live Verification
+                                </button>
+                            </div>
+                        </div>
+                        <div id="smtpFeedbackMsg" class="mt-2 text-xs font-semibold text-emerald-300 hidden"></div>
+                    </div>
+
+                    <!-- Email Log Feed -->
+                    <div class="bg-zcmc-surface border border-zcmc-border rounded-2xl p-4 sm:p-5 shadow-xs">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                            <div>
+                                <h3 class="font-heading font-bold text-xs sm:text-sm uppercase tracking-wide text-zcmc-forest flex items-center gap-2">
+                                    <span>Gmail Notification Audit Feed</span>
+                                    <span class="text-xs text-emerald-700 font-semibold">(Receiving: axrcopu@gmail.com)</span>
+                                </h3>
+                                <p class="text-[11px] text-slate-500">Log of automated geofence transition alerts sent via email</p>
+                            </div>
+                            <button onclick="fetchEmailLogs()" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition touch-action">
+                                Refresh Email Log
+                            </button>
+                        </div>
+
+                        <div id="emailLogContainer" class="space-y-3">
                             <!-- Populated dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+                        </div>
+                    </div>
+                </section>
 
-        <!-- ========================================== -->
-        <!-- VIEW 3: GMAIL NOTIFICATION LOG -->
-        <!-- ========================================== -->
-        <section id="viewEmail" class="hidden space-y-4">
-            <!-- Live Gmail SMTP Sender Configuration Card -->
-            <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-md border border-slate-700">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-700 mb-3">
+            </main>
+
+            <!-- Institutional Desktop Footer (Hidden on Mobile) -->
+            <footer class="mt-auto border-t border-zcmc-border bg-white/70 py-4 px-6 text-xs text-zcmc-textMuted hidden md:block">
+                <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
-                        <h3 class="font-heading font-bold text-sm text-zcmc-gold uppercase">Connect Real Gmail Sender (Optional - For Real Inbox Delivery)</h3>
+                        <span class="font-bold text-zcmc-forest font-heading">Zamboanga City Medical Center (ZCMC)</span>
+                        <span>&bull;</span>
+                        <span class="font-formal italic">ZAMBASULTA Regional Inter-Facility Health Exchange</span>
                     </div>
-                    <span class="text-[10px] bg-emerald-900/60 text-emerald-300 font-mono px-2 py-0.5 rounded border border-emerald-600">
-                        TLS Port 587 Ready
-                    </span>
-                </div>
-                <p class="text-xs text-slate-300 mb-3">
-                    To receive real emails in <strong class="text-white">axrcopu@gmail.com</strong>, enter a sender Gmail account with a standard Google <strong>16-character App Password</strong> (from Google Account &rarr; Security &rarr; 2-Step Verification &rarr; App Passwords):
-                </p>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div>
-                        <label class="block text-[11px] text-slate-400 mb-1">Sender Gmail Address</label>
-                        <input type="email" id="smtpSenderEmail" placeholder="e.g., youraccount@gmail.com" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none focus:border-zcmc-gold">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] text-slate-400 mb-1">16-Char Google App Password</label>
-                        <input type="password" id="smtpSenderPassword" placeholder="e.g., abcd efgh ijkl mnop" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none focus:border-zcmc-gold">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="saveAndTestSmtp()" class="w-full py-2 bg-zcmc-gold hover:bg-amber-400 text-zcmc-forest font-heading font-bold rounded-lg shadow transition">
-                            Save & Send Live Verification
-                        </button>
+                    <div class="text-[11px] text-slate-500">
+                        Department of Health &bull; 100m Geofencing &bull; HL7 FHIR Interoperability
                     </div>
                 </div>
-                <div id="smtpFeedbackMsg" class="mt-2 text-xs font-semibold text-emerald-300 hidden"></div>
-            </div>
+            </footer>
+        </div>
+    </div>
 
-            <div class="bg-white border border-zcmc-border rounded-2xl p-5 shadow-xs">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-                    <div>
-                        <h3 class="font-heading font-bold text-sm uppercase tracking-wide text-zcmc-forest flex items-center gap-2">
-                            <span>Gmail Notification Audit Feed</span>
-                            <span class="text-xs text-emerald-700 font-semibold">(Receiving: axrcopu@gmail.com)</span>
-                        </h3>
-                        <p class="text-xs text-slate-500">Log of automated geofence transition alerts sent via email</p>
-                    </div>
-                    <button onclick="fetchEmailLogs()" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition">
-                        Refresh Email Log
-                    </button>
-                </div>
+    <!-- ======================================================== -->
+    <!-- MOBILE BOTTOM NAVIGATION BAR (md:hidden, fixed bottom)   -->
+    <!-- ======================================================== -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-zcmc-forest text-white border-t-2 border-zcmc-gold/60 shadow-2xl flex items-center justify-around px-2 py-1.5">
+        <!-- Tab 1: Intake -->
+        <button id="navMobPatient" onclick="switchView('patient')" 
+                class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-zcmc-gold touch-action">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span class="text-[10px] font-bold mt-0.5">Intake</span>
+        </button>
 
-                <div id="emailLogContainer" class="space-y-3">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
-        </section>
+        <!-- Tab 2: Admin -->
+        <button id="navMobAdmin" onclick="switchView('admin')" 
+                class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <span class="text-[10px] font-semibold mt-0.5">Admin</span>
+        </button>
 
-    </main>
+        <!-- Tab 3: Gmail -->
+        <button id="navMobEmail" onclick="switchView('email')" 
+                class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action relative">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <span class="text-[10px] font-semibold mt-0.5">Emails</span>
+            <span id="bottomEmailDot" class="absolute top-1 right-2 w-2 h-2 rounded-full bg-rose-500 hidden"></span>
+        </button>
+
+        <!-- Tab 4: Map -->
+        <button onclick="openMapModal()" 
+                class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action">
+            <svg class="w-5 h-5 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span class="text-[10px] font-semibold mt-0.5">Map 100m</span>
+        </button>
+
+        <!-- Tab 5: Branch Terminal -->
+        <button onclick="openBranchWindow()" 
+                class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            <span class="text-[10px] font-semibold mt-0.5">Terminal</span>
+        </button>
+    </nav>
 
     <!-- ========================================== -->
     <!-- INTERACTIVE MAP MODAL (LEAFLET / OSM) -->
     <!-- ========================================== -->
-    <div id="mapModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-2xl max-w-4xl w-full p-5 shadow-2xl flex flex-col space-y-4 max-h-[92vh] overflow-hidden">
+    <div id="mapModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 hidden">
+        <div class="bg-white rounded-t-2xl sm:rounded-2xl max-w-4xl w-full p-4 sm:p-5 shadow-2xl flex flex-col space-y-3.5 max-h-[92vh] overflow-hidden border border-slate-300">
             <!-- Modal Header -->
             <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div>
-                    <h3 class="font-heading font-bold text-base text-zcmc-forest flex items-center gap-2">
-                        <span>🗺️ Interactive Map Geofence Simulator</span>
-                        <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">100m Geofence Active</span>
+                    <h3 class="font-heading font-bold text-sm sm:text-base text-zcmc-forest flex items-center gap-2">
+                        <svg class="w-4 h-4 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                        <span>Interactive Map Geofence Simulator</span>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded border border-emerald-300">
+                            100m Geofence Active
+                        </span>
                     </h3>
-                    <p class="text-xs text-slate-500">Click anywhere on the map to set the patient's device location and evaluate autonomous status updates</p>
+                    <p class="text-[11px] text-slate-500">Click anywhere on the map or drag the pin to set the patient's device GPS</p>
                 </div>
-                <button onclick="closeMapModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold">
+                <button onclick="closeMapModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold touch-action">
                     &times;
                 </button>
             </div>
 
             <!-- Target Waypoint Selector & Quick Jumps -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Pre-defined Location Point:</label>
-                    <select id="mapWaypointSelect" onchange="handleWaypointChange()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold outline-none">
+                    <label for="mapWaypointSelect" class="block font-bold text-slate-700 mb-1 text-[11px]">Pre-defined Location Point:</label>
+                    <select id="mapWaypointSelect" onchange="handleWaypointChange()" 
+                            class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold outline-none text-xs">
                         <option value="port_pier1" data-lat="6.9035" data-lon="122.0782" selected>Port Pier 1 Slipway (Zamboanga)</option>
                         <option value="zcmc_er" data-lat="6.9125" data-lon="122.0722">ZCMC ER Trauma Gate</option>
                         <option value="isabela_port" data-lat="6.7058" data-lon="121.9725">Isabela Port Terminal (Basilan)</option>
@@ -401,23 +647,23 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Quick Distance Preset:</label>
+                    <label class="block font-bold text-slate-700 mb-1 text-[11px]">Quick Distance Presets:</label>
                     <div class="grid grid-cols-2 gap-1.5">
-                        <button onclick="jumpToPreset(50)" class="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-xs text-[11px]">
+                        <button onclick="jumpToPreset(50)" class="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-xs text-[10px] touch-action">
                             Inside 100m (~50m)
                         </button>
-                        <button onclick="jumpToPreset(400)" class="py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow-xs text-[11px]">
+                        <button onclick="jumpToPreset(400)" class="py-1.5 px-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow-xs text-[10px] touch-action">
                             Approach (~400m)
                         </button>
                     </div>
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Far Preset / Abort:</label>
+                    <label class="block font-bold text-slate-700 mb-1 text-[11px]">Far Presets / Sea:</label>
                     <div class="grid grid-cols-2 gap-1.5">
-                        <button onclick="jumpToPreset(1500)" class="py-1.5 px-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow-xs text-[11px]">
+                        <button onclick="jumpToPreset(1500)" class="py-1.5 px-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded shadow-xs text-[10px] touch-action">
                             In Transit (1.5km)
                         </button>
-                        <button onclick="jumpToPreset(8000)" class="py-1.5 px-2 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded shadow-xs text-[11px]">
+                        <button onclick="jumpToPreset(8000)" class="py-1.5 px-2 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded shadow-xs text-[10px] touch-action">
                             Far Away (8km)
                         </button>
                     </div>
@@ -425,19 +671,19 @@
             </div>
 
             <!-- Leaflet Interactive Map Container -->
-            <div id="mapContainer" class="w-full h-[360px] border border-slate-300 shadow-inner relative">
+            <div id="mapContainer" class="w-full h-[280px] sm:h-[360px] border border-slate-300 shadow-inner relative">
                 <!-- Map loads here -->
             </div>
 
             <!-- Telemetry & Feedback Footer -->
-            <div class="bg-slate-900 text-white p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="bg-slate-900 text-white p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                 <div>
                     <div>Distance to Point: <strong id="mapDistMeters" class="text-zcmc-gold font-mono text-sm">-- meters</strong></div>
                     <div class="text-[11px] text-slate-300">Status Trigger: <strong id="mapStatusTrigger" class="text-emerald-400">Awaiting location click</strong></div>
                 </div>
-                <div class="text-right">
+                <div class="sm:text-right">
                     <div class="text-[11px] text-slate-400">Recipient: <span class="text-white font-semibold">axrcopu@gmail.com</span></div>
-                    <span id="mapEmailDeliveryStatus" class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+                    <span id="mapEmailDeliveryStatus" class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
                         Email trigger ready
                     </span>
                 </div>
@@ -445,6 +691,50 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- MARK AS DONE / ADMIT TO BRANCH MODAL -->
+    <!-- ========================================== -->
+    <div id="completeModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl flex flex-col space-y-3.5 border border-slate-300">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    <h3 class="font-heading font-bold text-sm sm:text-base text-zcmc-forest">
+                        Complete Ticket &amp; Admit Patient
+                    </h3>
+                </div>
+                <button onclick="closeCompleteModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold touch-action">
+                    &times;
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Select which operating branch facility is admitting and receiving this patient. The ticket will update to <strong class="text-emerald-800">COMPLETED &amp; ADMITTED</strong>, appear in that branch's admitted records, and close from this intake section.
+            </p>
+
+            <div>
+                <label for="completeBranchSelect" class="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Admitting Operating Branch Facility:
+                </label>
+                <select id="completeBranchSelect" 
+                        class="w-full text-xs font-semibold border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-zcmc-emerald outline-none">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button onclick="closeCompleteModal()" class="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-lg touch-action">
+                    Cancel
+                </button>
+                <button onclick="confirmCompleteTicket()" 
+                        class="px-4 py-2 bg-zcmc-forest hover:bg-zcmc-emerald text-white font-heading font-bold text-xs rounded-xl shadow transition touch-action">
+                    Confirm Admission &amp; Complete Ticket
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Engine: Preserving 100% of Lead Dev's Code and IDs -->
     <script>
         let currentReferralId = "ZCMC-MVP-" + Math.floor(1000 + Math.random() * 9000);
         let branchesList = [];
@@ -464,17 +754,56 @@
             document.getElementById('viewAdmin').classList.toggle('hidden', view !== 'admin');
             document.getElementById('viewEmail').classList.toggle('hidden', view !== 'email');
 
-            document.getElementById('tabBtnPatient').className = view === 'patient' 
-                ? 'px-3 py-1.5 rounded-lg bg-zcmc-gold text-zcmc-forest font-bold shadow-xs transition'
-                : 'px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition';
+            // 1. Update Desktop Sidebar Buttons
+            const dPatient = document.getElementById('tabBtnPatient');
+            const dAdmin = document.getElementById('tabBtnAdmin');
+            const dEmail = document.getElementById('tabBtnEmail');
 
-            document.getElementById('tabBtnAdmin').className = view === 'admin' 
-                ? 'px-3 py-1.5 rounded-lg bg-zcmc-gold text-zcmc-forest font-bold shadow-xs transition'
-                : 'px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition';
+            if (dPatient && dAdmin && dEmail) {
+                dPatient.className = view === 'patient' 
+                    ? 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition bg-zcmc-emerald text-white border border-zcmc-gold/40 shadow-xs text-left touch-action'
+                    : 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white hover:bg-white/10 text-left touch-action';
+                dAdmin.className = view === 'admin' 
+                    ? 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition bg-zcmc-emerald text-white border border-zcmc-gold/40 shadow-xs text-left touch-action'
+                    : 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white hover:bg-white/10 text-left touch-action';
+                dEmail.className = view === 'email' 
+                    ? 'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition bg-zcmc-emerald text-white border border-zcmc-gold/40 shadow-xs text-left touch-action'
+                    : 'w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white hover:bg-white/10 text-left touch-action';
+            }
 
-            document.getElementById('tabBtnEmail').className = view === 'email' 
-                ? 'px-3 py-1.5 rounded-lg bg-zcmc-gold text-zcmc-forest font-bold shadow-xs transition flex items-center gap-1'
-                : 'px-3 py-1.5 rounded-lg text-white/80 hover:text-white transition flex items-center gap-1';
+            // 2. Update Mobile Top Segmented Controller Buttons
+            const mPatient = document.getElementById('mobileSegBtnPatient');
+            const mAdmin = document.getElementById('mobileSegBtnAdmin');
+            const mEmail = document.getElementById('mobileSegBtnEmail');
+
+            if (mPatient && mAdmin && mEmail) {
+                mPatient.className = view === 'patient'
+                    ? 'flex-1 py-1.5 rounded-lg bg-zcmc-forest text-white shadow-xs transition touch-action flex items-center justify-center gap-1'
+                    : 'flex-1 py-1.5 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1';
+                mAdmin.className = view === 'admin'
+                    ? 'flex-1 py-1.5 rounded-lg bg-zcmc-forest text-white shadow-xs transition touch-action flex items-center justify-center gap-1'
+                    : 'flex-1 py-1.5 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1';
+                mEmail.className = view === 'email'
+                    ? 'flex-1 py-1.5 rounded-lg bg-zcmc-forest text-white shadow-xs transition touch-action flex items-center justify-center gap-1'
+                    : 'flex-1 py-1.5 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1';
+            }
+
+            // 3. Update Mobile Bottom Nav Buttons
+            const bPatient = document.getElementById('navMobPatient');
+            const bAdmin = document.getElementById('navMobAdmin');
+            const bEmail = document.getElementById('navMobEmail');
+
+            if (bPatient && bAdmin && bEmail) {
+                bPatient.className = view === 'patient' 
+                    ? 'flex flex-col items-center justify-center p-1.5 min-w-[56px] text-zcmc-gold touch-action' 
+                    : 'flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action';
+                bAdmin.className = view === 'admin' 
+                    ? 'flex flex-col items-center justify-center p-1.5 min-w-[56px] text-zcmc-gold touch-action' 
+                    : 'flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action';
+                bEmail.className = view === 'email' 
+                    ? 'flex flex-col items-center justify-center p-1.5 min-w-[56px] text-zcmc-gold touch-action relative' 
+                    : 'flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action relative';
+            }
 
             if (view === 'admin') refreshBranchView();
             if (view === 'email') fetchEmailLogs();
@@ -542,7 +871,6 @@
                 document.getElementById('ticketIdDisplay').innerText = currentReferralId;
                 document.getElementById('ticketNameDisplay').innerText = currentPatientName;
                 document.getElementById('ticketStatusDisplay').innerText = "Pending Departure";
-            document.getElementById('ticketDestDisplay').innerText = "Unassigned (Awaiting Admission)";
                 document.getElementById('ticketDestDisplay').innerText = "Unassigned (Awaiting Admission)";
                 document.getElementById('ticketStatusDisplay').className = "font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5";
 
@@ -616,8 +944,8 @@
             waypointMarker.bindPopup(`<b>Pre-defined Point:</b><br>${targetWaypoint.name}`).openPopup();
 
             waypointCircle = L.circle([targetWaypoint.lat, targetWaypoint.lon], {
-                color: '#004225',
-                fillColor: '#0B6623',
+                color: '#064E3B',
+                fillColor: '#087A55',
                 fillOpacity: 0.25,
                 radius: 100 // Exact 100 meter geofence
             }).addTo(map);
@@ -681,7 +1009,7 @@
                 connectingLine = L.polyline([
                     [targetWaypoint.lat, targetWaypoint.lon],
                     [lat, lon]
-                ], { color: '#D4AF37', weight: 3, dashArray: '6, 6' }).addTo(map);
+                ], { color: '#C8A64D', weight: 3, dashArray: '6, 6' }).addTo(map);
             }
 
             try {
@@ -746,20 +1074,20 @@
             const tbody = document.getElementById('branchTableBody');
 
             if (!referrals.length) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">No active patient referrals found in regional database.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic font-medium">No active patient referrals found in regional database.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = referrals.map(r => {
                 const dist = haversineDist(currentBranch.lat, currentBranch.lon, r.patient_lat || clickedGps.lat, r.patient_lon || clickedGps.lon);
                 return `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3 font-mono font-bold text-slate-700">${r.id}</td>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-mono font-bold text-zcmc-forest">${r.id}</td>
                         <td class="p-3 font-semibold text-slate-800">${r.patient_name}</td>
                         <td class="p-3 text-slate-600">${r.origin_facility}</td>
                         <td class="p-3 text-slate-600 max-w-[200px] truncate" title="${r.primary_diagnosis}">${r.primary_diagnosis}</td>
                         <td class="p-3">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 uppercase">
                                 ${r.transit_status}
                             </span>
                         </td>
@@ -767,7 +1095,7 @@
                             ${dist} km from ${currentBranch.name}
                         </td>
                         <td class="p-3">
-                            <button onclick="openMapModal()" class="px-2.5 py-1 bg-zcmc-forest hover:bg-zcmc-emerald text-white rounded font-semibold text-[11px]">
+                            <button onclick="openMapModal()" class="px-2.5 py-1 bg-zcmc-forest hover:bg-zcmc-emerald text-white rounded-lg font-semibold text-[11px] shadow-xs touch-action">
                                 Test Geofence
                             </button>
                         </td>
@@ -781,21 +1109,29 @@
                 const res = await fetch('/api/email/log');
                 const logs = await res.json();
                 document.getElementById('emailBadge').innerText = logs.length;
+                const mBadge = document.getElementById('mobileEmailBadge');
+                if (mBadge) mBadge.innerText = logs.length;
+                const bDot = document.getElementById('bottomEmailDot');
+                if (bDot) {
+                    if (logs.length > 0) bDot.classList.remove('hidden');
+                    else bDot.classList.add('hidden');
+                }
+
                 const container = document.getElementById('emailLogContainer');
                 if (!logs.length) {
-                    container.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">No Gmail notifications logged yet.</div>`;
+                    container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs italic">No Gmail notifications logged yet.</div>`;
                     return;
                 }
                 container.innerHTML = logs.map(l => `
-                    <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50 space-y-1.5 text-xs">
+                    <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50 space-y-1.5 text-xs shadow-2xs">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <span class="font-bold text-slate-800">${l.subject}</span>
                                 <span class="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded">To: ${l.recipient}</span>
                             </div>
-                            <span class="text-[10px] text-slate-400">${new Date(l.timestamp * 1000).toLocaleTimeString()}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">${new Date(l.timestamp * 1000).toLocaleTimeString()}</span>
                         </div>
-                        <pre class="font-mono text-slate-700 bg-white p-2.5 rounded border border-slate-200 whitespace-pre-wrap text-[11px]">${l.body}</pre>
+                        <pre class="font-mono text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200 whitespace-pre-wrap text-[11px] leading-relaxed select-all">${l.body}</pre>
                     </div>
                 `).join('');
             } catch (e) {
@@ -803,7 +1139,6 @@
             }
         }
 
-        
         async function saveAndTestSmtp() {
             const sender = document.getElementById('smtpSenderEmail').value;
             const pass = document.getElementById('smtpSenderPassword').value;
@@ -836,7 +1171,6 @@
             }
         }
 
-        
         function openBranchWindow(branchId) {
             const bId = branchId || document.getElementById('adminBranchSelect')?.value || 'zcmc_apex';
             window.open(`/branch.html?id=${encodeURIComponent(bId)}`, '_blank', 'width=1150,height=750');
@@ -903,7 +1237,7 @@
                 const emailTimeLabel = document.getElementById('lblEmailTime');
                 if (emailPreview) {
                     emailPreview.innerText = `[TICKET CLOSED] Final closure notification dispatched to axrcopu@gmail.com for ${currentPatientName} admitted to ${branchName}. No further automated notifications will be sent.`;
-                    emailPreview.className = 'bg-emerald-900 p-3 rounded-xl font-mono text-xs text-emerald-200 border border-emerald-700 min-h-[50px]';
+                    emailPreview.className = 'bg-emerald-950 p-3 rounded-xl font-mono text-xs text-emerald-200 border border-emerald-700 min-h-[50px]';
                 }
                 if (emailTimeLabel) emailTimeLabel.innerText = new Date().toLocaleTimeString();
 
@@ -923,7 +1257,6 @@
             document.getElementById('activeTicketWrapper').classList.remove('hidden');
             document.getElementById('ticketStatusDisplay').innerText = "Pending Departure";
             document.getElementById('ticketDestDisplay').innerText = "Unassigned (Awaiting Admission)";
-                document.getElementById('ticketDestDisplay').innerText = "Unassigned (Awaiting Admission)";
             document.getElementById('ticketStatusDisplay').className = "font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5";
         }
 
@@ -933,43 +1266,5 @@
             fetchEmailLogs();
         });
     </script>
-
-    <!-- ========================================== -->
-    <!-- MARK AS DONE / ADMIT TO BRANCH MODAL -->
-    <!-- ========================================== -->
-    <div id="completeModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl flex flex-col space-y-4">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-                <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                    <h3 class="font-heading font-bold text-base text-zcmc-forest">Complete Ticket & Admit Patient</h3>
-                </div>
-                <button onclick="closeCompleteModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold">
-                    &times;
-                </button>
-            </div>
-
-            <p class="text-xs text-slate-600">
-                Select which operating branch facility is admitting and receiving this patient. The ticket will update to <strong class="text-emerald-800">COMPLETED & ADMITTED</strong>, appear in that branch's admitted records, and close from this intake section (no emails sent).
-            </p>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Admitting Operating Branch Facility:</label>
-                <select id="completeBranchSelect" class="w-full text-xs font-semibold border border-slate-300 rounded-lg p-2.5 bg-slate-50 focus:ring-2 focus:ring-zcmc-emerald outline-none">
-                    <!-- Populated dynamically -->
-                </select>
-            </div>
-
-            <div class="flex items-center justify-end gap-2 pt-2">
-                <button onclick="closeCompleteModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-lg">
-                    Cancel
-                </button>
-                <button onclick="confirmCompleteTicket()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-heading font-bold text-xs rounded-xl shadow transition">
-                    Confirm Admission & Complete Ticket
-                </button>
-            </div>
-        </div>
-    </div>
-
 </body>
 </html>

@@ -2,82 +2,131 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZCMC Operating Branch Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ZCMC Operating Branch Terminal | Regional Exchange Node</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Official ZCMC Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         zcmc: {
-                            forest: '#004225',
-                            emerald: '#0B6623',
-                            gold: '#D4AF37',
-                            sand: '#F7F4EB',
+                            forest: '#064E3B',
+                            emerald: '#087A55',
+                            mint: '#70B89B',
+                            ivory: '#F7F5EC',
+                            gold: '#C8A64D',
+                            antiquegold: '#9C7A2F',
                             surface: '#FFFFFF',
                             border: '#E2E8F0',
-                            textMain: '#1A2E26',
-                            textMuted: '#5C7168'
+                            textMain: '#0F172A',
+                            textMuted: '#64748B'
                         }
                     },
                     fontFamily: {
-                        sans: ['"Source Sans 3"', 'sans-serif'],
-                        heading: ['Montserrat', 'sans-serif']
+                        heading: ['Montserrat', 'sans-serif'],
+                        body: ['Source Sans 3', 'sans-serif'],
+                        formal: ['Libre Baskerville', 'serif']
                     }
                 }
             }
         }
     </script>
+    <style>
+        body { 
+            font-family: 'Source Sans 3', sans-serif; 
+            background-color: #F7F5EC; 
+            color: #0F172A;
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3, h4, .font-heading { font-family: 'Montserrat', sans-serif; }
+        .font-formal { font-family: 'Libre Baskerville', serif; }
+        .touch-action:active { transform: scale(0.97); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+    </style>
 </head>
-<body class="bg-zcmc-sand text-zcmc-textMain font-sans min-h-screen flex flex-col p-4 sm:p-6">
+<body class="min-h-screen antialiased flex flex-col bg-zcmc-ivory text-zcmc-textMain">
 
     <!-- Operating Branch Terminal Header -->
-    <header class="bg-zcmc-forest text-white rounded-2xl p-5 shadow-lg border-b-4 border-zcmc-gold mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-xl bg-zcmc-gold text-zcmc-forest flex items-center justify-center font-heading font-black text-xl shadow-inner">
-                🏥
-            </div>
-            <div>
-                <span class="text-[10px] font-bold tracking-widest uppercase bg-emerald-900 text-zcmc-gold px-2 py-0.5 rounded border border-zcmc-gold/40">
-                    Live Operating Branch Terminal
-                </span>
-                <h1 id="branchTitle" class="font-heading font-extrabold text-lg sm:text-xl text-white">
-                    Loading Branch...
-                </h1>
-                <p id="branchSubtitle" class="text-xs text-emerald-200">Shared Inter-Branch Clinical Exchange Node</p>
-            </div>
-        </div>
+    <header class="bg-zcmc-forest text-white sticky top-0 z-40 border-b-2 border-zcmc-gold shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            
+            <!-- Brand & Branch Title -->
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="relative w-10 h-10 flex-shrink-0 flex items-center justify-center bg-zcmc-forest rounded-xl border border-zcmc-mint/40 shadow-xs">
+                    <div class="absolute w-7 h-7 border border-zcmc-gold rounded translate-x-0.5 translate-y-0.5 opacity-90"></div>
+                    <div class="relative w-7 h-7 bg-zcmc-emerald border border-zcmc-mint rounded flex items-center justify-center text-white font-bold text-xs">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 10.5h-5.5V5a1.5 1.5 0 0 0-3 0v5.5H5a1.5 1.5 0 0 0 0 3h5.5V19a1.5 1.5 0 0 0 3 0v-5.5H19a1.5 1.5 0 0 0 0-3z"/>
+                        </svg>
+                    </div>
+                </div>
 
-        <!-- Switch Branch Inside Window -->
-        <div class="flex items-center gap-2 bg-black/25 px-3 py-2 rounded-xl border border-white/10 text-xs">
-            <label class="text-emerald-200 font-bold">Switch Operating Branch:</label>
-            <select id="branchSelector" onchange="changeBranch(this.value)" class="bg-white text-slate-800 font-bold px-3 py-1.5 rounded-lg border border-slate-300 outline-none">
-                <!-- Populated dynamically -->
-            </select>
-            <button onclick="loadBranchData()" class="px-3 py-1.5 bg-zcmc-gold text-zcmc-forest hover:bg-amber-400 font-bold rounded-lg transition">
-                ↻ Sync Now
-            </button>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-zcmc-gold/20 text-zcmc-gold border border-zcmc-gold/40 uppercase tracking-wider">
+                            Live Branch Terminal
+                        </span>
+                        <span class="inline-flex items-center gap-1 text-[10px] text-emerald-300 font-mono">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Synchronized
+                        </span>
+                    </div>
+                    <h1 id="branchTitle" class="text-sm sm:text-base md:text-lg font-extrabold text-white font-heading truncate">
+                        Loading Branch...
+                    </h1>
+                    <p id="branchSubtitle" class="text-[11px] text-zcmc-mint truncate">
+                        Shared Inter-Branch Clinical Exchange Node
+                    </p>
+                </div>
+            </div>
+
+            <!-- Branch Selector & Action Controls -->
+            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div class="flex items-center gap-1.5 bg-black/25 px-2.5 py-1.5 rounded-xl border border-white/10 text-xs w-full sm:w-auto">
+                    <label for="branchSelector" class="text-zcmc-mint font-semibold text-[11px] whitespace-nowrap">Facility:</label>
+                    <select id="branchSelector" onchange="changeBranch(this.value)" class="bg-white text-slate-800 font-bold px-2.5 py-1 rounded-lg border border-slate-300 text-xs outline-none flex-grow sm:flex-grow-0 focus:ring-1 focus:ring-zcmc-gold">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <button onclick="loadBranchData()" class="px-3 py-1.5 bg-zcmc-emerald hover:bg-zcmc-mint text-white font-bold text-xs rounded-xl border border-white/20 transition flex items-center gap-1.5 shadow-xs touch-action">
+                    <svg class="w-3.5 h-3.5 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span>Sync</span>
+                </button>
+
+                <a href="/mvp.html" class="px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white font-bold text-xs rounded-xl border border-white/20 transition flex items-center gap-1 touch-action">
+                    <span>Main Hub</span>
+                    &rarr;
+                </a>
+            </div>
         </div>
     </header>
 
-    <!-- Main Content Grid -->
-    <main class="space-y-6 flex-grow">
+    <!-- Main Content Workspace -->
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 flex-grow w-full">
 
         <!-- TOP SECTION: Patients Admitted To THIS Branch -->
-        <section class="bg-white border-2 border-emerald-500/40 rounded-2xl p-5 shadow-sm">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <section class="bg-zcmc-surface border border-emerald-300/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2 mb-4">
                 <div class="flex items-center gap-2.5">
-                    <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
                     <div>
-                        <h2 class="font-heading font-bold text-sm sm:text-base text-zcmc-forest uppercase">
+                        <h2 class="font-heading font-bold text-xs sm:text-sm text-zcmc-forest uppercase tracking-wide">
                             Patients Admitted To THIS Branch (<span id="admittedBranchName" class="text-emerald-700">--</span>)
                         </h2>
-                        <p class="text-xs text-slate-500">Tickets received, verified, and admitted to this specific hospital/clinic facility</p>
+                        <p class="text-[11px] text-slate-500">Tickets received, verified, and admitted to this specific hospital/clinic facility</p>
                     </div>
                 </div>
-                <span id="admittedCountBadge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span id="admittedCountBadge" class="self-start sm:self-auto text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
                     0 Admitted Patients
                 </span>
             </div>
@@ -85,14 +134,14 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
-                        <tr class="bg-emerald-50/70 text-emerald-950 border-b border-emerald-200">
-                            <th class="p-3 font-bold">Referral ID</th>
-                            <th class="p-3 font-bold">Patient Name</th>
-                            <th class="p-3 font-bold">PhilHealth PIN</th>
-                            <th class="p-3 font-bold">Origin Location</th>
-                            <th class="p-3 font-bold">Chief Complaint & Diagnosis</th>
-                            <th class="p-3 font-bold">Known Allergies</th>
-                            <th class="p-3 font-bold text-emerald-800">Status</th>
+                        <tr class="bg-emerald-50/70 text-emerald-950 border-b border-emerald-200 text-[11px] uppercase tracking-wider font-bold">
+                            <th class="p-3">Referral ID</th>
+                            <th class="p-3">Patient Name</th>
+                            <th class="p-3">PhilHealth PIN</th>
+                            <th class="p-3">Origin Location</th>
+                            <th class="p-3">Chief Complaint &amp; Diagnosis</th>
+                            <th class="p-3">Known Allergies</th>
+                            <th class="p-3 text-emerald-900">Status</th>
                         </tr>
                     </thead>
                     <tbody id="admittedTableBody" class="divide-y divide-slate-100 font-sans">
@@ -103,18 +152,18 @@
         </section>
 
         <!-- BOTTOM SECTION: Patient Records From OTHER Branches -->
-        <section class="bg-white border border-zcmc-border rounded-2xl p-5 shadow-xs">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <section class="bg-zcmc-surface border border-zcmc-border rounded-2xl p-4 sm:p-5 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2 mb-4">
                 <div class="flex items-center gap-2.5">
                     <span class="w-3 h-3 rounded-full bg-blue-500"></span>
                     <div>
-                        <h2 class="font-heading font-bold text-sm sm:text-base text-slate-800 uppercase">
+                        <h2 class="font-heading font-bold text-xs sm:text-sm text-slate-800 uppercase tracking-wide">
                             Patient Records Across OTHER Regional Branches (Shared Network)
                         </h2>
-                        <p class="text-xs text-slate-500">Real-time delta feed of active or admitted tickets in other facilities, including calculated distance from THIS branch</p>
+                        <p class="text-[11px] text-slate-500">Real-time delta feed of active or admitted tickets in other facilities, with distance from THIS branch</p>
                     </div>
                 </div>
-                <span id="otherCountBadge" class="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                <span id="otherCountBadge" class="self-start sm:self-auto text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                     0 Other Records
                 </span>
             </div>
@@ -122,13 +171,13 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-700 border-b border-slate-200">
-                            <th class="p-3 font-bold">Referral ID</th>
-                            <th class="p-3 font-bold">Patient Name</th>
-                            <th class="p-3 font-bold">Assigned Facility</th>
-                            <th class="p-3 font-bold">Diagnosis</th>
-                            <th class="p-3 font-bold">Current Transit Status</th>
-                            <th class="p-3 font-bold text-emerald-800">Distance From THIS Branch</th>
+                        <tr class="bg-slate-50 text-slate-700 border-b border-slate-200 text-[11px] uppercase tracking-wider font-bold">
+                            <th class="p-3">Referral ID</th>
+                            <th class="p-3">Patient Name</th>
+                            <th class="p-3">Assigned Facility</th>
+                            <th class="p-3">Diagnosis</th>
+                            <th class="p-3">Current Transit Status</th>
+                            <th class="p-3 text-emerald-800">Distance From THIS Branch</th>
                         </tr>
                     </thead>
                     <tbody id="otherTableBody" class="divide-y divide-slate-100 font-sans">
@@ -139,6 +188,20 @@
         </section>
 
     </main>
+
+    <!-- Institutional Footer -->
+    <footer class="mt-auto border-t border-zcmc-border bg-white/70 py-4 px-4 text-xs text-zcmc-textMuted">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-zcmc-forest font-heading">Zamboanga City Medical Center (ZCMC)</span>
+                <span>&bull;</span>
+                <span class="font-formal italic">ZAMBASULTA Regional Inter-Facility Health Exchange</span>
+            </div>
+            <div class="text-[11px] text-slate-500">
+                Operating Branch Node &bull; Auto-Sync Active (3s poll)
+            </div>
+        </div>
+    </footer>
 
     <script>
         // Extract branch_id from URL params (e.g. branch.html?id=zcmc_apex)
@@ -178,7 +241,7 @@
             activeBranchId = branchId;
             currentBranch = branchesList.find(b => b.id === branchId) || branchesList[0];
             
-            document.title = `${currentBranch.name} - Branch Terminal`;
+            document.title = `${currentBranch.name} | Branch Terminal`;
             document.getElementById('branchTitle').innerText = currentBranch.name;
             document.getElementById('branchSubtitle').innerText = `${currentBranch.island_province} • Facility Level: ${currentBranch.type.toUpperCase()} • Available Beds: ${currentBranch.available_beds}`;
             document.getElementById('admittedBranchName').innerText = currentBranch.name;
@@ -194,7 +257,6 @@
                 const referrals = await res.json();
 
                 // Partition: Admitted to THIS branch vs Other branches
-                // A patient is ONLY admitted here if they have been finalized/completed to this branch!
                 const admittedHere = referrals.filter(r => {
                     const dest = (r.destination_facility || "").toLowerCase().trim();
                     const name = currentBranch.name.toLowerCase().trim();
@@ -209,19 +271,20 @@
                 document.getElementById('admittedCountBadge').innerText = `${admittedHere.length} Admitted Patients`;
                 const admittedTbody = document.getElementById('admittedTableBody');
                 if (!admittedHere.length) {
-                    admittedTbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-slate-400 font-medium">No patients currently admitted to this facility.</td></tr>`;
+                    admittedTbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-medium italic">No patients currently admitted to this facility.</td></tr>`;
                 } else {
                     admittedTbody.innerHTML = admittedHere.map(r => `
-                        <tr class="hover:bg-emerald-50/40 transition">
-                            <td class="p-3 font-mono font-bold text-emerald-900">${r.id}</td>
+                        <tr class="hover:bg-emerald-50/50 transition">
+                            <td class="p-3 font-mono font-bold text-zcmc-forest">${r.id}</td>
                             <td class="p-3 font-bold text-slate-800">${r.patient_name}</td>
-                            <td class="p-3 font-mono text-slate-600">${r.philhealth_id || 'N/A'}</td>
+                            <td class="p-3 font-mono text-slate-600 text-[11px]">${r.philhealth_id || 'N/A'}</td>
                             <td class="p-3 text-slate-600">${r.origin_facility}</td>
                             <td class="p-3 text-slate-700 font-medium max-w-[220px] truncate" title="${r.primary_diagnosis}">${r.primary_diagnosis}</td>
                             <td class="p-3 text-rose-600 font-semibold">${r.allergies || 'None'}</td>
                             <td class="p-3">
-                                <span class="px-2.5 py-1 rounded text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                    ${r.transit_status === 'admitted_and_completed' ? 'COMPLETED & ADMITTED' : r.transit_status}
+                                <span class="px-2.5 py-1 rounded text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1">
+                                    <svg class="w-3 h-3 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    ${r.transit_status === 'admitted_and_completed' ? 'COMPLETED &amp; ADMITTED' : r.transit_status}
                                 </span>
                             </td>
                         </tr>
@@ -232,7 +295,7 @@
                 document.getElementById('otherCountBadge').innerText = `${otherBranches.length} Other Branch Records`;
                 const otherTbody = document.getElementById('otherTableBody');
                 if (!otherBranches.length) {
-                    otherTbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-slate-400 font-medium">No patient records from other branches found.</td></tr>`;
+                    otherTbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-medium italic">No patient records from other branches found.</td></tr>`;
                 } else {
                     otherTbody.innerHTML = otherBranches.map(r => {
                         const dist = haversineDist(currentBranch.lat, currentBranch.lon, r.patient_lat || currentBranch.lat, r.patient_lon || currentBranch.lon);

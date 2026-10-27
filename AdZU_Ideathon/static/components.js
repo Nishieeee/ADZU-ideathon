@@ -360,6 +360,14 @@
                                 <span>Regional Analytics</span>
                             </a>
 
+                            <a href="/mvp.html" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-zcmc-gold bg-zcmc-gold/15 border border-zcmc-gold/40 shadow-xs hover:bg-zcmc-gold/25">
+                                <svg class="w-4 h-4 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <span>Geofence &amp; Map MVP</span>
+                            </a>
+
                             <button onclick="ZCMC.openVaultModal()" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition touch-action">
                                 <div class="flex items-center gap-3">
                                     <svg class="w-4 h-4 text-zcmc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -502,6 +510,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
                         <span class="text-[10px] font-bold mt-0.5">Stats</span>
+                    </a>
+
+                    <a href="/mvp.html" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-zcmc-gold touch-action">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span class="text-[10px] font-bold mt-0.5">MVP Map</span>
                     </a>
 
                     <button onclick="ZCMC.openVaultModal()" class="flex flex-col items-center justify-center p-1.5 min-w-[56px] text-slate-300 hover:text-white touch-action relative">
