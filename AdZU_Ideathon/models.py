@@ -151,7 +151,12 @@ def upsert_referral(
     transit_status: str,
     fhir_resource: Dict[str, Any],
     client_id: str = "edge-client",
-    db_path: str = DB_PATH
+    db_path: str = DB_PATH,
+    phone_number: str = "",
+    allergies: str = "",
+    corridor_type: str = "maritime",
+    patient_lat: float = 0.0,
+    patient_lon: float = 0.0,
 ) -> Dict[str, Any]:
     now = time.time()
     conn = get_connection(db_path)
@@ -160,8 +165,9 @@ def upsert_referral(
         conn.execute("""
             INSERT INTO referrals (
                 id, patient_name, philhealth_id, origin_facility, destination_facility,
-                urgency, primary_diagnosis, transit_status, fhir_resource, updated_at, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                urgency, primary_diagnosis, transit_status, fhir_resource, updated_at, created_at,
+                phone_number, allergies, corridor_type, patient_lat, patient_lon
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 patient_name=excluded.patient_name,
                 philhealth_id=excluded.philhealth_id,
@@ -171,11 +177,17 @@ def upsert_referral(
                 primary_diagnosis=excluded.primary_diagnosis,
                 transit_status=excluded.transit_status,
                 fhir_resource=excluded.fhir_resource,
-                updated_at=excluded.updated_at
+                updated_at=excluded.updated_at,
+                phone_number=excluded.phone_number,
+                allergies=excluded.allergies,
+                corridor_type=excluded.corridor_type,
+                patient_lat=excluded.patient_lat,
+                patient_lon=excluded.patient_lon
         """, (
             referral_id, patient_name, philhealth_id, origin_facility,
             destination_facility, urgency, diagnosis, transit_status,
-            fhir_json, now, now
+            fhir_json, now, now,
+            phone_number, allergies, corridor_type, patient_lat, patient_lon
         ))
         
         # Append to sync audit ledger

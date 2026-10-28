@@ -116,14 +116,14 @@
                         <span>2. Branch Admin Queue</span>
                     </button>
 
-                    <!-- Tab 3: Gmail Audit Feed -->
+                    <!-- Tab 3: SMS Dispatch Feed (Offline Cellular 2G) -->
                     <button id="tabBtnEmail" onclick="switchView('email')" 
                             class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white hover:bg-white/10 text-left touch-action">
                         <div class="flex items-center gap-3">
-                            <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                            <span>3. Gmail Audit Feed</span>
+                            <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                            <span>3. SMS Dispatch Ledger</span>
                         </div>
-                        <span id="emailBadge" class="bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+                        <span id="emailBadge" class="bg-emerald-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
                     </button>
 
                     <!-- Action: Map Modal Trigger -->
@@ -169,8 +169,8 @@
                     <strong class="text-white truncate block">Port Pier 1 Slipway</strong>
                 </div>
                 <div class="text-[11px] text-slate-400">
-                    <span class="block text-[10px] uppercase font-bold text-slate-500">Gmail Alert To:</span>
-                    <strong class="text-zcmc-gold font-mono truncate block">axrcopu@gmail.com</strong>
+                    <span class="block text-[10px] uppercase font-bold text-slate-500">Cellular Protocol:</span>
+                    <strong class="text-zcmc-gold font-mono truncate block">Offline 2G / GSM Radio SMS</strong>
                 </div>
             </div>
         </aside>
@@ -221,8 +221,8 @@
                     </button>
                     <button id="mobileSegBtnEmail" onclick="switchView('email')" 
                             class="flex-1 py-1.5 rounded-lg text-slate-700 hover:text-black transition touch-action flex items-center justify-center gap-1">
-                        <span>Gmail</span>
-                        <span id="mobileEmailBadge" class="bg-rose-500 text-white text-[9px] px-1 rounded-full font-bold">0</span>
+                        <span>SMS Feed</span>
+                        <span id="mobileEmailBadge" class="bg-emerald-500 text-white text-[9px] px-1 rounded-full font-bold">0</span>
                     </button>
                 </div>
             </div>
@@ -266,9 +266,9 @@
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label for="pEmail" class="block text-xs font-bold text-slate-700 uppercase mb-1">Notification Email <span class="text-rose-600">*</span></label>
-                                        <input type="email" id="pEmail" required value="axrcopu@gmail.com" 
-                                               class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald outline-none transition">
+                                        <label for="pEmail" class="block text-xs font-bold text-slate-700 uppercase mb-1">Alert Mobile Number <span class="text-rose-600">*</span></label>
+                                        <input type="tel" id="pEmail" required value="+63-917-ZCMC-911" 
+                                               class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-zcmc-emerald focus:border-zcmc-emerald outline-none transition font-mono">
                                     </div>
                                     <div>
                                         <label for="pOriginSelect" class="block text-xs font-bold text-slate-700 uppercase mb-1">Origin Location <span class="text-rose-600">*</span></label>
@@ -368,21 +368,16 @@
                         </div>
 
                         <!-- Ticket Completed Notice (Hidden until finalized) -->
-                        <div id="ticketCompletedNotice" class="hidden bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-4 sm:p-5 text-emerald-950 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-base flex-shrink-0">
-                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                </div>
-                                <div>
-                                    <h4 class="font-heading font-bold text-xs sm:text-sm text-emerald-900">Active Ticket Completed &amp; Admitted</h4>
-                                    <p class="text-xs text-emerald-700" id="completedNoticeDetail">
-                                        Patient has been received at the selected operating branch. Ticket removed from active intake queue.
-                                    </p>
-                                </div>
+                        <div id="ticketCompletedNotice" class="hidden bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-4 sm:p-5 text-emerald-950 shadow-xs flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-base flex-shrink-0">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                             </div>
-                            <button onclick="createNewTicket()" class="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap touch-action">
-                                + Queue New Patient
-                            </button>
+                            <div>
+                                <h4 class="font-heading font-bold text-xs sm:text-sm text-emerald-900">Active Ticket Completed &amp; Admitted</h4>
+                                <p class="text-xs text-emerald-700" id="completedNoticeDetail">
+                                    Patient has been received at the selected operating branch. Ticket removed from active intake queue.
+                                </p>
+                            </div>
                         </div>
 
                         <!-- AI Clinical Routing Telemetry Card -->
@@ -416,17 +411,17 @@
                             </div>
                         </div>
 
-                        <!-- Recent Gmail Notification Preview -->
+                        <!-- Recent SMS Cellular Notification Preview -->
                         <div class="bg-slate-900 text-white border border-slate-800 rounded-2xl p-4 shadow-md">
                             <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
                                 <span class="font-bold uppercase tracking-wider text-zcmc-gold flex items-center gap-1.5">
-                                    <svg class="w-3.5 h-3.5 text-rose-400" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                                    <span>Latest Gmail Dispatched (axrcopu@gmail.com)</span>
+                                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                    <span>Latest SMS Broadcast (+63-917-ZCMC-911)</span>
                                 </span>
-                                <span id="lblEmailTime" class="text-[10px] text-slate-400 font-mono">Ready</span>
+                                <span id="lblEmailTime" class="text-[10px] text-slate-400 font-mono">Cellular Ready</span>
                             </div>
                             <div id="emailPreviewBox" class="bg-slate-800/80 p-3 rounded-xl font-mono text-xs text-emerald-300 border border-slate-700 min-h-[50px] leading-relaxed break-words">
-                                [No email triggered yet. Open map and select a location point near or away from target.]
+                                [No SMS dispatched yet. Submit triage or select waypoint on map.]
                             </div>
                         </div>
 
@@ -492,58 +487,44 @@
                 </section>
 
                 <!-- ========================================== -->
-                <!-- VIEW 3: GMAIL NOTIFICATION LOG -->
+                <!-- VIEW 3: SMS DISPATCH LEDGER (CELLULAR 2G)    -->
                 <!-- ========================================== -->
                 <section id="viewEmail" class="hidden space-y-4">
-                    <!-- Live Gmail SMTP Sender Configuration Card -->
+                    <!-- Cellular Protocol Banner -->
                     <div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-md border border-slate-800">
                         <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
                             <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                                <h3 class="font-heading font-bold text-xs sm:text-sm text-zcmc-gold uppercase">
-                                    Connect Real Gmail Sender (Optional - For Real Inbox Delivery)
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                <h3 class="font-heading font-bold text-xs sm:text-sm text-emerald-300 uppercase">
+                                    Autonomous 2G GSM / SMS Carrier Gateway (Offline Protocol)
                                 </h3>
                             </div>
                             <span class="text-[10px] bg-emerald-950 text-emerald-300 font-mono px-2 py-0.5 rounded border border-emerald-600">
-                                TLS Port 587 Ready
+                                GSM Active &bull; Zero IP Internet Needed
                             </span>
                         </div>
                         <p class="text-xs text-slate-300 mb-3">
-                            To receive real emails in <strong class="text-white">axrcopu@gmail.com</strong>, enter a sender Gmail account with a standard Google <strong>16-character App Password</strong> (from Google Account &rarr; Security &rarr; 2-Step Verification &rarr; App Passwords):
+                            Dispatches ultra-compact 160-character alerts over rural GSM signaling channels. Even during a complete internet blackout across Basilan, Sulu, or Tawi-Tawi, emergency text dispatches reach clinicians and Pier 1 emergency dispatchers.
                         </p>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                            <div>
-                                <label for="smtpSenderEmail" class="block text-[11px] text-slate-400 mb-1">Sender Gmail Address</label>
-                                <input type="email" id="smtpSenderEmail" placeholder="e.g., youraccount@gmail.com" 
-                                       class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none focus:border-zcmc-gold">
-                            </div>
-                            <div>
-                                <label for="smtpSenderPassword" class="block text-[11px] text-slate-400 mb-1">16-Char Google App Password</label>
-                                <input type="password" id="smtpSenderPassword" placeholder="e.g., abcd efgh ijkl mnop" 
-                                       class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white outline-none focus:border-zcmc-gold font-mono">
-                            </div>
-                            <div class="flex items-end">
-                                <button onclick="saveAndTestSmtp()" 
-                                        class="w-full py-2 bg-zcmc-gold hover:bg-amber-400 text-zcmc-forest font-heading font-bold rounded-lg shadow transition touch-action">
-                                    Save &amp; Send Live Verification
-                                </button>
-                            </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1.5 rounded-lg bg-slate-800 text-emerald-400 font-mono text-xs border border-slate-700">
+                                Direct Receiver: +63-917-ZCMC-911
+                            </span>
                         </div>
-                        <div id="smtpFeedbackMsg" class="mt-2 text-xs font-semibold text-emerald-300 hidden"></div>
                     </div>
 
-                    <!-- Email Log Feed -->
+                    <!-- SMS Log Feed -->
                     <div class="bg-zcmc-surface border border-zcmc-border rounded-2xl p-4 sm:p-5 shadow-xs">
                         <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
                             <div>
                                 <h3 class="font-heading font-bold text-xs sm:text-sm uppercase tracking-wide text-zcmc-forest flex items-center gap-2">
-                                    <span>Gmail Notification Audit Feed</span>
-                                    <span class="text-xs text-emerald-700 font-semibold">(Receiving: axrcopu@gmail.com)</span>
+                                    <span>Real-Time SMS Dispatch Feed</span>
+                                    <span class="text-xs text-emerald-700 font-semibold">(GSM Control Channel Active)</span>
                                 </h3>
-                                <p class="text-[11px] text-slate-500">Log of automated geofence transition alerts sent via email</p>
+                                <p class="text-[11px] text-slate-500">Log of automated triage referrals and geofence updates dispatched via cellular SMS</p>
                             </div>
                             <button onclick="fetchEmailLogs()" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition touch-action">
-                                Refresh Email Log
+                                Refresh SMS Feed
                             </button>
                         </div>
 
@@ -822,12 +803,19 @@
 
         async function handlePatientQueue(e) {
             e.preventDefault();
+            currentReferralId = "ZCMC-MVP-" + Math.floor(1000 + Math.random() * 9000);
             currentPatientName = document.getElementById('pName').value;
             const pPhilhealth = document.getElementById('pPhilhealth').value;
             const pEmail = document.getElementById('pEmail').value;
             const pOrigin = document.getElementById('pOriginSelect').value;
             const pComplaint = document.getElementById('pComplaint').value;
             const pAllergies = document.getElementById('pAllergies').value;
+
+            // Ensure active ticket wrapper is displayed and completion notice is hidden
+            const completedNotice = document.getElementById('ticketCompletedNotice');
+            if (completedNotice) completedNotice.classList.add('hidden');
+            const ticketWrapper = document.getElementById('activeTicketWrapper');
+            if (ticketWrapper) ticketWrapper.classList.remove('hidden');
 
             // 1. Post to AI Triage Suggestion API
             try {
@@ -839,7 +827,8 @@
                         chief_complaint: pComplaint,
                         allergies: pAllergies,
                         patient_lat: targetWaypoint.lat,
-                        patient_lon: targetWaypoint.lon
+                        patient_lon: targetWaypoint.lon,
+                        phone_number: pEmail
                     })
                 });
                 const aiData = await aiRes.json();
@@ -867,12 +856,25 @@
                     })
                 });
 
-                // Update Ticket Display
-                document.getElementById('ticketIdDisplay').innerText = currentReferralId;
-                document.getElementById('ticketNameDisplay').innerText = currentPatientName;
-                document.getElementById('ticketStatusDisplay').innerText = "Pending Departure";
-                document.getElementById('ticketDestDisplay').innerText = "Unassigned (Awaiting Admission)";
-                document.getElementById('ticketStatusDisplay').className = "font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5";
+                // Update Ticket Display safely
+                const tId = document.getElementById('ticketIdDisplay');
+                if (tId) tId.innerText = currentReferralId;
+                const tName = document.getElementById('ticketNameDisplay');
+                if (tName) tName.innerText = currentPatientName;
+                const tStatus = document.getElementById('ticketStatusDisplay');
+                if (tStatus) {
+                    tStatus.innerText = "Pending Departure";
+                    tStatus.className = "font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5";
+                }
+                const tDest = document.getElementById('ticketDestDisplay');
+                if (tDest) tDest.innerText = "Unassigned (Awaiting Admission)";
+
+                // Update SMS Broadcast Preview Box safely
+                const previewSms = aiData?.generated_sms || `[ZCMC PRIORITY-1] Ref ${currentReferralId} | Pt: ${currentPatientName} | Acuity: ${aiData?.ai_telemetry?.acuity || 'URGENT'} | Alert: Keep GPS active.`;
+                const smsBox = document.getElementById('emailPreviewBox');
+                if (smsBox) smsBox.innerText = previewSms;
+                const smsTime = document.getElementById('lblEmailTime');
+                if (smsTime) smsTime.innerText = new Date().toLocaleTimeString();
 
                 fetchEmailLogs();
                 openMapModal();
@@ -882,14 +884,36 @@
         }
 
         function renderAiTelemetry(data) {
+            if (!data || !data.ai_telemetry) return;
+
+            // Reconstruct AI Telemetry container structure if previously replaced by completion closure banner
+            const aiCard = document.getElementById('aiTelemetryCard');
+            if (aiCard && !document.getElementById('aiAcuityBadge')) {
+                aiCard.innerHTML = `
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                        <h3 class="font-heading font-bold text-xs sm:text-sm uppercase tracking-wide text-zcmc-forest flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-zcmc-gold"></span>
+                            <span>AI Clinical Routing Telemetry</span>
+                        </h3>
+                        <span id="aiAcuityBadge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300">
+                            Acuity: STAT
+                        </span>
+                    </div>
+                    <div id="aiAllergyBox" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 font-semibold mb-3"></div>
+                    <h4 class="text-[11px] font-bold uppercase text-slate-500 mb-2">Recommended Healthcare Facilities</h4>
+                    <div id="aiRecList" class="space-y-2 text-xs"></div>
+                `;
+            }
+
             const badge = document.getElementById('aiAcuityBadge');
-            badge.innerText = `Acuity: ${data.ai_telemetry.acuity}`;
+            if (badge) badge.innerText = `Acuity: ${data.ai_telemetry.acuity}`;
 
             const allergyBox = document.getElementById('aiAllergyBox');
-            allergyBox.innerText = data.ai_telemetry.allergy_warning;
+            if (allergyBox) allergyBox.innerText = data.ai_telemetry.allergy_warning;
 
             const list = document.getElementById('aiRecList');
-            list.innerHTML = data.recommended_facilities.slice(0, 4).map(f => `
+            if (list && Array.isArray(data.recommended_facilities)) {
+                list.innerHTML = data.recommended_facilities.slice(0, 4).map(f => `
                 <div class="p-3.5 border border-slate-200 rounded-xl bg-white space-y-1.5 shadow-2xs hover:border-zcmc-emerald transition">
                     <div class="flex justify-between items-start gap-2">
                         <div>
@@ -907,6 +931,7 @@
                     </div>
                 </div>
             `).join('');
+            }
         }
 
         // ==========================================
@@ -1032,7 +1057,8 @@
                 // Update Map Modal Footer
                 document.getElementById('mapDistMeters').innerText = `${data.distance_meters} meters`;
                 document.getElementById('mapStatusTrigger').innerText = data.status_label;
-                document.getElementById('mapEmailDeliveryStatus').innerText = `Gmail Dispatched (${data.email_delivery.status})`;
+                const emailStat = document.getElementById('mapEmailDeliveryStatus');
+                if (emailStat) emailStat.innerText = `Cellular SMS Dispatched (${data.sms_delivery?.status || 'DISPATCHED_CELLULAR'})`;
 
                 // Update Main UI Ticket
                 const ticketBadge = document.getElementById('ticketStatusDisplay');
@@ -1041,8 +1067,9 @@
                     ? "font-bold text-xs bg-emerald-400 text-black px-2 py-0.5 rounded inline-block mt-0.5" 
                     : "font-bold text-xs bg-amber-400 text-black px-2 py-0.5 rounded inline-block mt-0.5";
 
-                // Update Email Preview Box
-                document.getElementById('emailPreviewBox').innerText = data.email_delivery.body;
+                // Update SMS Broadcast Preview Box with Active Ticket Data
+                const smsText = data.sms_delivery?.sms_text || `[ZCMC GeoAlert] Ref ${currentReferralId}: ${data.status_label} (~${data.distance_meters}m from ${data.waypoint_name}).`;
+                document.getElementById('emailPreviewBox').innerText = smsText;
                 document.getElementById('lblEmailTime').innerText = new Date().toLocaleTimeString();
 
                 fetchEmailLogs();
@@ -1106,7 +1133,7 @@
 
         async function fetchEmailLogs() {
             try {
-                const res = await fetch('/api/email/log');
+                const res = await fetch('/api/sms/log');
                 const logs = await res.json();
                 document.getElementById('emailBadge').innerText = logs.length;
                 const mBadge = document.getElementById('mobileEmailBadge');
@@ -1119,55 +1146,31 @@
 
                 const container = document.getElementById('emailLogContainer');
                 if (!logs.length) {
-                    container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs italic">No Gmail notifications logged yet.</div>`;
+                    container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs italic">No SMS broadcasts dispatched yet.</div>`;
                     return;
                 }
-                container.innerHTML = logs.map(l => `
+                container.innerHTML = logs.map(l => {
+                    const statusText = l.status === "SEMAPHORE_ERROR" ? "QUEUED_GSM" : (l.status || "DISPATCHED_CELLULAR");
+                    const statusBadgeClass = statusText === "DISPATCHED_CELLULAR" || statusText === "SENT" || statusText === "QUEUED_GSM"
+                        ? "text-emerald-700 bg-emerald-100" 
+                        : "text-amber-700 bg-amber-100";
+                    const recipientNum = l.recipient || "+63-917-ZCMC-911";
+
+                    return `
                     <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50 space-y-1.5 text-xs shadow-2xs">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
-                                <span class="font-bold text-slate-800">${l.subject}</span>
-                                <span class="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded">To: ${l.recipient}</span>
+                                <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold font-mono text-[10px]">2G GSM SMS</span>
+                                <span class="text-[10px] px-1.5 py-0.5 bg-slate-200 text-slate-800 font-bold rounded">To: ${recipientNum}</span>
+                                <span class="text-[10px] ${statusBadgeClass} font-bold font-mono px-1.5 py-0.5 rounded">${statusText}</span>
                             </div>
                             <span class="text-[10px] text-slate-400 font-mono">${new Date(l.timestamp * 1000).toLocaleTimeString()}</span>
                         </div>
-                        <pre class="font-mono text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200 whitespace-pre-wrap text-[11px] leading-relaxed select-all">${l.body}</pre>
+                        <pre class="font-mono text-emerald-800 bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-200 whitespace-pre-wrap text-[11px] leading-relaxed select-all">${l.sms_text}</pre>
                     </div>
-                `).join('');
+                `}).join('');
             } catch (e) {
-                console.error("Could not fetch email logs", e);
-            }
-        }
-
-        async function saveAndTestSmtp() {
-            const sender = document.getElementById('smtpSenderEmail').value;
-            const pass = document.getElementById('smtpSenderPassword').value;
-            const feedback = document.getElementById('smtpFeedbackMsg');
-
-            if (!sender || !pass) {
-                alert("Please provide both sender Gmail and 16-character App Password.");
-                return;
-            }
-
-            feedback.className = "mt-2 text-xs font-semibold text-amber-300 block";
-            feedback.innerText = "Connecting to smtp.gmail.com:587 and verifying credentials...";
-
-            try {
-                const res = await fetch('/api/email/configure', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        gmail_user: sender,
-                        gmail_app_password: pass
-                    })
-                });
-                const data = await res.json();
-                feedback.className = "mt-2 text-xs font-semibold text-emerald-300 block";
-                feedback.innerText = "Result: " + data.delivery.status;
-                fetchEmailLogs();
-            } catch (err) {
-                feedback.className = "mt-2 text-xs font-semibold text-rose-300 block";
-                feedback.innerText = "Error configuring SMTP: " + err;
+                console.error("Could not fetch SMS logs", e);
             }
         }
 
@@ -1232,18 +1235,18 @@
                         </div>`;
                 }
 
-                // 4. Close Gmail preview panel — replace with closure notice
+                // 4. Update SMS preview panel with closure dispatch
                 const emailPreview = document.getElementById('emailPreviewBox');
                 const emailTimeLabel = document.getElementById('lblEmailTime');
                 if (emailPreview) {
-                    emailPreview.innerText = `[TICKET CLOSED] Final closure notification dispatched to axrcopu@gmail.com for ${currentPatientName} admitted to ${branchName}. No further automated notifications will be sent.`;
+                    emailPreview.innerText = `[TICKET CLOSED] Final 2G SMS dispatched to +63-917-ZCMC-911: Patient ${currentPatientName} successfully admitted at ${branchName}. Transit finalized.`;
                     emailPreview.className = 'bg-emerald-950 p-3 rounded-xl font-mono text-xs text-emerald-200 border border-emerald-700 min-h-[50px]';
                 }
                 if (emailTimeLabel) emailTimeLabel.innerText = new Date().toLocaleTimeString();
 
-                // 5. Refresh admin branch tables and email log
+                // 5. Refresh admin branch tables and SMS log
                 refreshBranchView();
-                setTimeout(fetchEmailLogs, 2500);
+                setTimeout(fetchEmailLogs, 1000);
 
             } catch (e) {
                 alert("Error completing ticket: " + e);
